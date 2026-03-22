@@ -123,6 +123,19 @@ async def chat_completions(request: Request):
     # 估算tokens
     estimated_tokens = sum(len(str(m.get("content", ""))) for m in messages) // 4
 
+    # 检查上下文长度是否超过80%
+    backend_config = app.config.get_backend_by_name(available_backends[0].name) if available_backends else None
+    if backend_config and model_id != "*":
+        for m in backend_config.models:
+            if m.id == model_id and m.context_length > 0:
+                usage_ratio = estimated_tokens / m.context_length
+                if usage_ratio > 0.8:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"context used {int(usage_ratio * 100)}%"
+                    )
+                break
+
     # 选择后端
     selected_backend = None
     tried_backends = []
