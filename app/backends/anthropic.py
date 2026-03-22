@@ -9,7 +9,7 @@ import httpx
 from .base import BaseBackend
 
 import logging
-logger = logging.getLogger("openfish.backends.anthropic")
+logger = logging.getLogger("fishrouter.backends.anthropic")
 
 
 class AnthropicBackend(BaseBackend):

@@ -1,4 +1,4 @@
-"""OpenFish - 轻量级AI模型路由平台"""
+"""FishRouter - 轻量级AI模型路由平台"""
 import asyncio
 import logging
 import sys
@@ -22,7 +22,7 @@ logging.basicConfig(
     format="%(asctime)s [%(name)s] %(levelname)s: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S"
 )
-logger = logging.getLogger("openfish")
+logger = logging.getLogger("fishrouter")
 
 # 全局变量
 config = Config()
@@ -89,7 +89,7 @@ async def close_backends():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
-    logger.info("OpenFish starting...")
+    logger.info("FishRouter starting...")
 
     # 初始化
     await init_backends()
@@ -99,22 +99,22 @@ async def lifespan(app: FastAPI):
     auth.enabled = config.auth.enabled
     auth.update_keys(config.auth.api_keys)
 
-    logger.info(f"OpenFish started on {config.server.host}:{config.server.port}")
+    logger.info(f"FishRouter started on {config.server.host}:{config.server.port}")
     logger.info(f"Backends: {list(backends.keys())}")
     logger.info(f"Dashboard: http://{config.server.host}:{config.server.port}/")
 
     yield
 
     # 清理
-    logger.info("OpenFish shutting down...")
+    logger.info("FishRouter shutting down...")
     await stop_health_checker()
     await close_backends()
-    logger.info("OpenFish stopped")
+    logger.info("FishRouter stopped")
 
 
 # 创建FastAPI应用
 app = FastAPI(
-    title="OpenFish",
+    title="FishRouter",
     description="轻量级AI模型路由平台",
     version="1.0.0",
     lifespan=lifespan
@@ -168,7 +168,7 @@ app.include_router(config_router)
 @app.get("/health")
 async def health():
     """健康检查"""
-    return {"status": "ok", "service": "openfish"}
+    return {"status": "ok", "service": "fishrouter"}
 
 
 # 根端点
@@ -176,7 +176,7 @@ async def health():
 async def api_root():
     """API根端点"""
     return {
-        "service": "OpenFish",
+        "service": "FishRouter",
         "version": "1.0.0",
         "endpoints": [
             "/v1/chat/completions",

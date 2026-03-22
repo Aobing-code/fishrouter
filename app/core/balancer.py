@@ -6,7 +6,7 @@ from typing import List, Optional, Dict
 from ..backends.base import BaseBackend
 
 import logging
-logger = logging.getLogger("openfish.balancer")
+logger = logging.getLogger("fishrouter.balancer")
 
 
 class LoadBalancer:

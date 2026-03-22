@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException
 from app.core import stats
 
 import logging
-logger = logging.getLogger("openfish.api.monitor")
+logger = logging.getLogger("fishrouter.api.monitor")
 
 router = APIRouter()
 

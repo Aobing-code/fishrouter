@@ -7,7 +7,7 @@ from typing import Dict, List, Optional
 from datetime import datetime, timedelta
 
 import logging
-logger = logging.getLogger("openfish.stats")
+logger = logging.getLogger("fishrouter.stats")
 
 
 @dataclass

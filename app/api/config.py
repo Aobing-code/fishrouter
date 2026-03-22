@@ -5,7 +5,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 import logging
-logger = logging.getLogger("openfish.api.config")
+logger = logging.getLogger("fishrouter.api.config")
 
 router = APIRouter()
 

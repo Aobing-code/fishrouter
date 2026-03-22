@@ -3,7 +3,7 @@ from typing import Dict, Any, List
 from fastapi import APIRouter, HTTPException
 
 import logging
-logger = logging.getLogger("openfish.api.models")
+logger = logging.getLogger("fishrouter.api.models")
 
 router = APIRouter()
 
@@ -34,7 +34,7 @@ async def list_models():
             "id": model,
             "object": "model",
             "created": 0,
-            "owned_by": "openfish"
+            "owned_by": "fishrouter"
         }
         for model in sorted(all_models)
     ]
@@ -52,5 +52,5 @@ async def get_model(model_id: str):
         "id": model_id,
         "object": "model",
         "created": 0,
-        "owned_by": "openfish"
+        "owned_by": "fishrouter"
     }

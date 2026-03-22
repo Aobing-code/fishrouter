@@ -6,7 +6,7 @@ from typing import Any, AsyncIterator, Dict, List, Optional
 from dataclasses import dataclass
 import logging
 
-logger = logging.getLogger("openfish.backends")
+logger = logging.getLogger("fishrouter.backends")
 
 
 @dataclass

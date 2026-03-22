@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from pydantic import BaseModel
 
 import logging
-logger = logging.getLogger("openfish.web")
+logger = logging.getLogger("fishrouter.web")
 
 router = APIRouter()
 
@@ -54,7 +54,7 @@ def verify_session(token: str) -> bool:
 def get_session_token(request: Request) -> str:
     """从请求中获取session token"""
     # 从cookie获取
-    token = request.cookies.get("openfish_session")
+    token = request.cookies.get("fishrouter_session")
     if token:
         return token
     # 从header获取
@@ -84,7 +84,7 @@ async def login(body: LoginRequest):
     app = get_app()
     
     # 验证密码（使用第一个API key作为管理员密码）
-    valid_keys = app.config.auth.api_keys if app.config.auth.enabled else ["sk-openfish"]
+    valid_keys = app.config.auth.api_keys if app.config.auth.enabled else ["sk-fishrouter"]
     
     if body.password in valid_keys:
         # 生成session token
@@ -93,7 +93,7 @@ async def login(body: LoginRequest):
         
         response = JSONResponse({"status": "ok", "message": "登录成功"})
         response.set_cookie(
-            key="openfish_session",
+            key="fishrouter_session",
             value=token,
             max_age=SESSION_EXPIRE,
             httponly=True,
@@ -112,7 +112,7 @@ async def logout(request: Request):
         sessions.pop(token, None)
     
     response = JSONResponse({"status": "ok", "message": "已登出"})
-    response.delete_cookie("openfish_session")
+    response.delete_cookie("fishrouter_session")
     return response
 
 

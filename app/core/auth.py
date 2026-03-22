@@ -5,7 +5,7 @@ from fastapi import HTTPException, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 import logging
-logger = logging.getLogger("openfish.auth")
+logger = logging.getLogger("fishrouter.auth")
 
 
 class APIKeyAuth:

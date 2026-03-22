@@ -9,7 +9,7 @@ import httpx
 from .base import BaseBackend
 
 import logging
-logger = logging.getLogger("openfish.backends.google")
+logger = logging.getLogger("fishrouter.backends.google")
 
 
 class GoogleBackend(BaseBackend):

@@ -9,7 +9,7 @@ from app.core import stats, rate_limiter
 from app.core.balancer import HealthChecker
 
 import logging
-logger = logging.getLogger("openfish.api.chat")
+logger = logging.getLogger("fishrouter.api.chat")
 
 router = APIRouter()
 
@@ -68,7 +68,7 @@ def extract_request_params(body: Dict) -> Dict[str, Any]:
 
 def inject_fallback_info(content: str, provider: str, model: str, reason: str) -> str:
     """在内容前注入回退信息"""
-    fallback_msg = f"[openfish]回退到 {provider}/{model}，失败原因: {reason}[openfish-end]\n\n"
+    fallback_msg = f"[fishrouter]回退到 {provider}/{model}，失败原因: {reason}[fishrouter-end]\n\n"
     return fallback_msg + (content or "")
 
 
@@ -283,9 +283,9 @@ async def stream_with_fallback(
         try:
             # 发送回退信息
             if current_fail_reason:
-                fallback_msg = f"[openfish]回退到 {current_provider}/{current_model}，失败原因: {current_fail_reason}[openfish-end]\n\n"
+                fallback_msg = f"[fishrouter]回退到 {current_provider}/{current_model}，失败原因: {current_fail_reason}[fishrouter-end]\n\n"
                 chunk = {
-                    "id": "chatcmpl-openfish",
+                    "id": "chatcmpl-fishrouter",
                     "object": "chat.completion.chunk",
                     "created": int(time.time()),
                     "model": model,

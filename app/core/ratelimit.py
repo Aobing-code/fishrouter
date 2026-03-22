@@ -5,7 +5,7 @@ from collections import deque
 from typing import Dict, Optional
 import logging
 
-logger = logging.getLogger("openfish.ratelimit")
+logger = logging.getLogger("fishrouter.ratelimit")
 
 
 class TokenBucket:

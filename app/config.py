@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Optional
 from dataclasses import dataclass, field
 import logging
 
-logger = logging.getLogger("openfish.config")
+logger = logging.getLogger("fishrouter.config")
 
 
 @dataclass
@@ -77,7 +77,7 @@ class ServerConfig:
 class AuthConfig:
     """认证配置"""
     enabled: bool = True
-    api_keys: List[str] = field(default_factory=lambda: ["sk-openfish"])
+    api_keys: List[str] = field(default_factory=lambda: ["sk-fishrouter"])
 
 
 class Config:
@@ -210,7 +210,7 @@ class Config:
         auth = self._config.get("auth", {})
         self.auth = AuthConfig(
             enabled=auth.get("enabled", True),
-            api_keys=auth.get("api_keys", ["sk-openfish"])
+            api_keys=auth.get("api_keys", ["sk-fishrouter"])
         )
 
     def _create_default_config(self) -> None:
@@ -272,7 +272,7 @@ class Config:
             ],
             "auth": {
                 "enabled": False,
-                "api_keys": ["sk-openfish"]
+                "api_keys": ["sk-fishrouter"]
             }
         }
         self._parse_config()
