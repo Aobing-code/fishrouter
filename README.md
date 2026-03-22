@@ -202,7 +202,9 @@ python -m app.main
 
 ### Chat Completions
 
-通过 model ID 选择模型：
+#### 直接使用模型名
+
+通过 model ID 选择模型，失败后使用默认路由回退：
 
 ```bash
 curl http://localhost:8080/v1/chat/completions \
@@ -215,6 +217,59 @@ curl http://localhost:8080/v1/chat/completions \
     "stream": false
   }'
 ```
+
+#### 使用指定路由 (back-xxx)
+
+使用 `back-路由名` 格式，按指定路由的回退规则处理：
+
+```bash
+# 使用名为 "default" 的路由配置
+curl http://localhost:8080/v1/chat/completions \
+  -d '{"model": "back-default", "messages": [...]}'
+
+# 使用名为 "openai" 的路由配置
+curl http://localhost:8080/v1/chat/completions \
+  -d '{"model": "back-openai", "messages": [...]}'
+```
+
+### 工具调用 (Function Calling)
+
+支持 OpenAI 格式的 tools 参数：
+
+```bash
+curl http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4",
+    "messages": [{"role": "user", "content": "北京今天天气怎么样？"}],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "get_weather",
+          "description": "获取指定城市的天气信息",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "city": {
+                "type": "string",
+                "description": "城市名称"
+              }
+            },
+            "required": ["city"]
+          }
+        }
+      }
+    ],
+    "tool_choice": "auto"
+  }'
+```
+
+支持的后端：
+- **OpenAI**: 原生支持
+- **Anthropic**: 自动转换格式
+- **Google Gemini**: 自动转换为 function calling
+- **Ollama**: 需要模型支持
 
 ### 多模态 Vision（图片理解）
 
