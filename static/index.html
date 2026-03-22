@@ -793,21 +793,26 @@
             }
             const typeLabels = { ollama: 'Ollama', openai: 'OpenAI', anthropic: 'Claude', google: 'Gemini' };
             
-            list.innerHTML = currentFallbackOrder.map((target, index) => {
+            let html = '';
+            currentFallbackOrder.forEach((target, index) => {
                 // 解析 provider/model 格式
                 let provider, model, display, contextInfo = '';
                 if (target.includes('/')) {
-                    [provider, model] = target.split('/');
+                    const parts = target.split('/');
+                    provider = parts[0];
+                    model = parts[1];
                     // 查找模型信息
-                    for (const b of currentConfig.backends || []) {
-                        if (b.name === provider) {
-                            for (const m of b.models || []) {
-                                if (m.id === model) {
-                                    contextInfo = m.context_length ? `${m.context_length.toLocaleString()} tokens` : '未知';
-                                    break;
+                    if (currentConfig && currentConfig.backends) {
+                        for (const b of currentConfig.backends) {
+                            if (b.name === provider && b.models) {
+                                for (const m of b.models) {
+                                    if (m.id === model) {
+                                        contextInfo = m.context_length ? `${m.context_length.toLocaleString()} tokens` : '未设置';
+                                        break;
+                                    }
                                 }
+                                break;
                             }
-                            break;
                         }
                     }
                     display = `<strong>${provider}</strong> / ${model}`;
@@ -817,18 +822,30 @@
                     display = `<strong>${target}</strong>`;
                 }
                 
-                const backend = backends.find(b => b.name === provider);
+                const backend = backends ? backends.find(b => b.name === provider) : null;
                 const typeLabel = backend ? typeLabels[backend.type] || backend.type : '未知';
                 
-                return `
+                html += `
                     <li class="sortable-item" draggable="true" data-target="${target}" data-index="${index}">
                         <span class="drag-handle">⋮⋮</span>
                         <span class="item-name">${display}</span>
                         <span class="item-type">${typeLabel}${contextInfo ? ' | ' + contextInfo : ''}</span>
-                        <button class="remove-btn" onclick="removeFromFallback('${target}')">移除</button>
+                        <button class="remove-btn" data-remove="${index}">移除</button>
                     </li>
                 `;
-            }).join('');
+            });
+            
+            list.innerHTML = html;
+            
+            // 绑定移除按钮事件
+            list.querySelectorAll('.remove-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const idx = parseInt(this.getAttribute('data-remove'));
+                    currentFallbackOrder.splice(idx, 1);
+                    loadFallbackOrder();
+                });
+            });
+            
             initDragAndDrop();
         }
 
