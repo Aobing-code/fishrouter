@@ -534,21 +534,26 @@
             const container = document.getElementById('models-container');
             
             let html = `
-                <div style="margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: #94a3b8; font-size: 13px;">从API获取到 ${models.length} 个模型，请勾选要添加的：</span>
-                    <div>
-                        <button class="btn btn-sm" style="background:#334155;color:#e2e8f0;margin-right:5px" onclick="toggleAllModels()">全选/反选</button>
-                        <button class="btn btn-sm btn-primary" onclick="addSelectedModels()">添加选中</button>
+                <div style="margin-bottom: 10px;">
+                    <input type="text" id="model-search" placeholder="搜索模型..." 
+                        onkeyup="filterModels()"
+                        style="width:100%;padding:8px;background:#0f172a;border:1px solid #334155;border-radius:6px;color:#e2e8f0;margin-bottom:8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #94a3b8; font-size: 13px;">共 ${models.length} 个模型，已选 <span id="selected-count">0</span> 个</span>
+                        <div>
+                            <button class="btn btn-sm" style="background:#334155;color:#e2e8f0;margin-right:5px" onclick="toggleAllModels()">全选/反选</button>
+                            <button class="btn btn-sm btn-primary" onclick="addSelectedModels()">添加选中</button>
+                        </div>
                     </div>
                 </div>
-                <div style="max-height: 400px; overflow-y: auto;">
+                <div id="models-list" style="max-height: 400px; overflow-y: auto;">
             `;
 
             models.forEach((m, i) => {
                 const contextDisplay = m.context_length ? `${m.context_length.toLocaleString()} tokens` : '<span style="color:#f87171">未返回</span>';
                 html += `
-                    <div style="display:flex;align-items:center;padding:8px;background:#0f172a;border:1px solid #334155;border-radius:6px;margin-bottom:6px;">
-                        <input type="checkbox" id="model-check-${i}" checked style="margin-right:10px;cursor:pointer;">
+                    <div class="model-item-row" data-model-id="${m.id.toLowerCase()}" style="display:flex;align-items:center;padding:8px;background:#0f172a;border:1px solid #334155;border-radius:6px;margin-bottom:6px;">
+                        <input type="checkbox" id="model-check-${i}" onchange="updateSelectedCount()" checked style="margin-right:10px;cursor:pointer;">
                         <div style="flex:1">
                             <div style="font-weight:500">${m.id}</div>
                             <div style="font-size:12px;color:#94a3b8">上下文: ${contextDisplay}</div>
@@ -559,12 +564,47 @@
 
             html += '</div>';
             container.innerHTML = html;
+            updateSelectedCount();
+        }
+
+        function filterModels() {
+            const search = document.getElementById('model-search').value.toLowerCase();
+            const items = document.querySelectorAll('.model-item-row');
+            items.forEach(item => {
+                const modelId = item.getAttribute('data-model-id');
+                item.style.display = modelId.includes(search) ? 'flex' : 'none';
+            });
+        }
+
+        function updateSelectedCount() {
+            let count = 0;
+            fetchedModels.forEach((m, i) => {
+                const cb = document.getElementById(`model-check-${i}`);
+                if (cb && cb.checked) count++;
+            });
+            const el = document.getElementById('selected-count');
+            if (el) el.textContent = count;
         }
 
         function toggleAllModels() {
-            const checkboxes = document.querySelectorAll('[id^="model-check-"]');
-            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-            checkboxes.forEach(cb => cb.checked = !allChecked);
+            const search = document.getElementById('model-search').value.toLowerCase();
+            const items = document.querySelectorAll('.model-item-row');
+            let anyVisibleUnchecked = false;
+            
+            items.forEach((item, i) => {
+                if (item.style.display !== 'none') {
+                    const cb = item.querySelector('input[type="checkbox"]');
+                    if (cb && !cb.checked) anyVisibleUnchecked = true;
+                }
+            });
+
+            items.forEach(item => {
+                if (item.style.display !== 'none') {
+                    const cb = item.querySelector('input[type="checkbox"]');
+                    if (cb) cb.checked = anyVisibleUnchecked;
+                }
+            });
+            updateSelectedCount();
         }
 
         async function addSelectedModels() {
