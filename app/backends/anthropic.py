@@ -2,6 +2,7 @@
 import asyncio
 import json
 import time
+import base64
 from typing import Any, AsyncIterator, Dict, List
 import httpx
 
@@ -32,6 +33,67 @@ class AnthropicBackend(BaseBackend):
             )
         return self._client
 
+    def _convert_messages(self, messages: List[Dict]) -> tuple[str, List[Dict]]:
+        """转换OpenAI格式消息为Anthropic格式（支持多模态）"""
+        system = ""
+        anthropic_messages = []
+
+        for msg in messages:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+
+            if role == "system":
+                if isinstance(content, list):
+                    system = " ".join(p.get("text", "") for p in content if p.get("type") == "text")
+                else:
+                    system = str(content)
+            else:
+                anthropic_role = role if role in ["user", "assistant"] else "user"
+                
+                if isinstance(content, list):
+                    # 多模态内容
+                    anthropic_content = []
+                    for part in content:
+                        if part.get("type") == "text":
+                            anthropic_content.append({"type": "text", "text": part.get("text", "")})
+                        elif part.get("type") == "image_url":
+                            image_url = part.get("image_url", {}).get("url", "")
+                            if image_url.startswith("data:"):
+                                # data:image/jpeg;base64,...
+                                media_type = image_url.split(";")[0].split(":")[1] if ":" in image_url else "image/jpeg"
+                                base64_data = image_url.split(",", 1)[1] if "," in image_url else ""
+                                anthropic_content.append({
+                                    "type": "image",
+                                    "source": {
+                                        "type": "base64",
+                                        "media_type": media_type,
+                                        "data": base64_data
+                                    }
+                                })
+                            else:
+                                # URL图片
+                                anthropic_content.append({
+                                    "type": "image",
+                                    "source": {
+                                        "type": "url",
+                                        "url": image_url
+                                    }
+                                })
+                        elif part.get("type") == "image_base64":
+                            anthropic_content.append({
+                                "type": "image",
+                                "source": {
+                                    "type": "base64",
+                                    "media_type": part.get("media_type", "image/jpeg"),
+                                    "data": part.get("data", "")
+                                }
+                            })
+                    anthropic_messages.append({"role": anthropic_role, "content": anthropic_content})
+                else:
+                    anthropic_messages.append({"role": anthropic_role, "content": str(content)})
+
+        return system, anthropic_messages
+
     async def chat_completion(
         self,
         model: str,
@@ -44,21 +106,7 @@ class AnthropicBackend(BaseBackend):
         start_time = time.time()
 
         try:
-            # 转换为Anthropic格式
-            system = ""
-            anthropic_messages = []
-
-            for msg in messages:
-                role = msg.get("role", "user")
-                content = msg.get("content", "")
-
-                if role == "system":
-                    system = content
-                else:
-                    anthropic_messages.append({
-                        "role": role if role in ["user", "assistant"] else "user",
-                        "content": content
-                    })
+            system, anthropic_messages = self._convert_messages(messages)
 
             payload: Dict[str, Any] = {
                 "model": model,
@@ -84,7 +132,6 @@ class AnthropicBackend(BaseBackend):
             latency = time.time() - start_time
             self.update_status(True, latency)
 
-            # 转换为OpenAI格式
             return self._to_openai_format(result, model)
 
         except Exception as e:
@@ -104,20 +151,7 @@ class AnthropicBackend(BaseBackend):
         start_time = time.time()
 
         try:
-            system = ""
-            anthropic_messages = []
-
-            for msg in messages:
-                role = msg.get("role", "user")
-                content = msg.get("content", "")
-
-                if role == "system":
-                    system = content
-                else:
-                    anthropic_messages.append({
-                        "role": role if role in ["user", "assistant"] else "user",
-                        "content": content
-                    })
+            system, anthropic_messages = self._convert_messages(messages)
 
             payload: Dict[str, Any] = {
                 "model": model,
@@ -185,7 +219,6 @@ class AnthropicBackend(BaseBackend):
             return False
         try:
             client = await self._get_client()
-            # 简单检查API Key是否有效
             response = await client.post(
                 f"{self.url}/v1/messages",
                 json={

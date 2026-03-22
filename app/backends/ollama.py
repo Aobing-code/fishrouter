@@ -2,6 +2,7 @@
 import asyncio
 import json
 import time
+import base64
 from typing import Any, AsyncIterator, Dict, List
 import httpx
 
@@ -27,6 +28,47 @@ class OllamaBackend(BaseBackend):
             )
         return self._client
 
+    def _convert_messages(self, messages: List[Dict]) -> List[Dict]:
+        """转换OpenAI格式消息为Ollama格式（支持多模态）"""
+        ollama_messages = []
+        for msg in messages:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+            
+            # 处理多模态内容
+            if isinstance(content, list):
+                text_parts = []
+                images = []
+                for part in content:
+                    if part.get("type") == "text":
+                        text_parts.append(part.get("text", ""))
+                    elif part.get("type") == "image_url":
+                        image_url = part.get("image_url", {}).get("url", "")
+                        if image_url.startswith("data:"):
+                            # base64编码的图片
+                            base64_data = image_url.split(",", 1)[1] if "," in image_url else ""
+                            images.append(base64_data)
+                        else:
+                            # URL图片，Ollama支持直接URL
+                            images.append(image_url)
+                    elif part.get("type") == "image_base64":
+                        images.append(part.get("data", ""))
+                
+                ollama_msg = {
+                    "role": role,
+                    "content": "\n".join(text_parts)
+                }
+                if images:
+                    ollama_msg["images"] = images
+                ollama_messages.append(ollama_msg)
+            else:
+                ollama_messages.append({
+                    "role": role,
+                    "content": str(content)
+                })
+        
+        return ollama_messages
+
     async def chat_completion(
         self,
         model: str,
@@ -39,13 +81,7 @@ class OllamaBackend(BaseBackend):
         start_time = time.time()
 
         try:
-            # 转换为Ollama格式
-            ollama_messages = []
-            for msg in messages:
-                ollama_messages.append({
-                    "role": msg.get("role", "user"),
-                    "content": msg.get("content", "")
-                })
+            ollama_messages = self._convert_messages(messages)
 
             payload = {
                 "model": model,
@@ -69,7 +105,6 @@ class OllamaBackend(BaseBackend):
             latency = time.time() - start_time
             self.update_status(True, latency)
 
-            # 转换为OpenAI格式
             return self._to_openai_format(result, model)
 
         except Exception as e:
@@ -89,12 +124,7 @@ class OllamaBackend(BaseBackend):
         start_time = time.time()
 
         try:
-            ollama_messages = []
-            for msg in messages:
-                ollama_messages.append({
-                    "role": msg.get("role", "user"),
-                    "content": msg.get("content", "")
-                })
+            ollama_messages = self._convert_messages(messages)
 
             payload = {
                 "model": model,

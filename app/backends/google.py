@@ -2,6 +2,7 @@
 import asyncio
 import json
 import time
+import base64
 from typing import Any, AsyncIterator, Dict, List
 import httpx
 
@@ -27,6 +28,78 @@ class GoogleBackend(BaseBackend):
             )
         return self._client
 
+    def _get_mime_type_from_data(self, data: str) -> str:
+        """从base64数据推断MIME类型"""
+        if data.startswith("/9j/"):
+            return "image/jpeg"
+        elif data.startswith("iVBOR"):
+            return "image/png"
+        elif data.startswith("UklG"):
+            return "image/webp"
+        elif data.startswith("R0lG"):
+            return "image/gif"
+        return "image/jpeg"
+
+    def _convert_messages(self, messages: List[Dict]) -> tuple[Dict | None, List[Dict]]:
+        """转换OpenAI格式消息为Google格式（支持多模态）"""
+        system_instruction = None
+        contents = []
+
+        for msg in messages:
+            role = msg.get("role", "user")
+            content = msg.get("content", "")
+
+            if role == "system":
+                if isinstance(content, list):
+                    text = " ".join(p.get("text", "") for p in content if p.get("type") == "text")
+                else:
+                    text = str(content)
+                system_instruction = {"parts": [{"text": text}]}
+            else:
+                google_role = "model" if role == "assistant" else "user"
+                parts = []
+
+                if isinstance(content, list):
+                    # 多模态内容
+                    for part in content:
+                        if part.get("type") == "text":
+                            parts.append({"text": part.get("text", "")})
+                        elif part.get("type") == "image_url":
+                            image_url = part.get("image_url", {}).get("url", "")
+                            if image_url.startswith("data:"):
+                                # data:image/jpeg;base64,...
+                                mime_type = image_url.split(";")[0].split(":")[1] if ":" in image_url else "image/jpeg"
+                                base64_data = image_url.split(",", 1)[1] if "," in image_url else ""
+                                parts.append({
+                                    "inlineData": {
+                                        "mimeType": mime_type,
+                                        "data": base64_data
+                                    }
+                                })
+                            else:
+                                # URL图片
+                                parts.append({
+                                    "fileData": {
+                                        "mimeType": "image/*",
+                                        "fileUri": image_url
+                                    }
+                                })
+                        elif part.get("type") == "image_base64":
+                            data = part.get("data", "")
+                            mime_type = part.get("media_type") or self._get_mime_type_from_data(data)
+                            parts.append({
+                                "inlineData": {
+                                    "mimeType": mime_type,
+                                    "data": data
+                                }
+                            })
+                else:
+                    parts.append({"text": str(content)})
+
+                contents.append({"role": google_role, "parts": parts})
+
+        return system_instruction, contents
+
     async def chat_completion(
         self,
         model: str,
@@ -39,22 +112,7 @@ class GoogleBackend(BaseBackend):
         start_time = time.time()
 
         try:
-            # 转换为Google格式
-            contents = []
-            system_instruction = None
-
-            for msg in messages:
-                role = msg.get("role", "user")
-                content = msg.get("content", "")
-
-                if role == "system":
-                    system_instruction = {"parts": [{"text": content}]}
-                else:
-                    google_role = "model" if role == "assistant" else "user"
-                    contents.append({
-                        "role": google_role,
-                        "parts": [{"text": content}]
-                    })
+            system_instruction, contents = self._convert_messages(messages)
 
             payload: Dict[str, Any] = {
                 "contents": contents,
@@ -100,21 +158,7 @@ class GoogleBackend(BaseBackend):
         start_time = time.time()
 
         try:
-            contents = []
-            system_instruction = None
-
-            for msg in messages:
-                role = msg.get("role", "user")
-                content = msg.get("content", "")
-
-                if role == "system":
-                    system_instruction = {"parts": [{"text": content}]}
-                else:
-                    google_role = "model" if role == "assistant" else "user"
-                    contents.append({
-                        "role": google_role,
-                        "parts": [{"text": content}]
-                    })
+            system_instruction, contents = self._convert_messages(messages)
 
             payload: Dict[str, Any] = {
                 "contents": contents,

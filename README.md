@@ -6,6 +6,7 @@
 
 - **全平台兼容**: 支持 Ollama、OpenAI、Anthropic Claude、Google Gemini
 - **OpenAI格式统一**: 完全兼容 OpenAI API，所有后端统一输入输出
+- **多模态支持**: 支持图片、文本混合输入（Vision）
 - **多Key轮询**: 每个提供商支持多个 API Key，自动轮询负载均衡
 - **模型独立限速**: 每个模型可设置独立的 RPM/TPM 速率限制
 - **智能路由**: 最低延迟、轮询、随机、加权、优先级多种策略
@@ -212,6 +213,40 @@ curl http://localhost:8080/v1/chat/completions \
     "messages": [{"role": "user", "content": "Hello"}],
     "temperature": 0.7,
     "stream": false
+  }'
+```
+
+### 多模态 Vision（图片理解）
+
+支持 base64 图片和 URL 图片：
+
+```bash
+# Base64 图片
+curl http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-4",
+    "messages": [{
+      "role": "user",
+      "content": [
+        {"type": "text", "text": "这张图片是什么?"},
+        {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,/9j/4AAQ..."}}
+      ]
+    }]
+  }'
+
+# URL 图片
+curl http://localhost:8080/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-sonnet",
+    "messages": [{
+      "role": "user",
+      "content": [
+        {"type": "text", "text": "Describe this image"},
+        {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}}
+      ]
+    }]
   }'
 ```
 
