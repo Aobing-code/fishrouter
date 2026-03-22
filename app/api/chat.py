@@ -11,39 +11,59 @@ logger = logging.getLogger("openfish.api.chat")
 
 router = APIRouter()
 
+# 上下文升级追踪器
+# 格式: {session_key: {"count": int, "original_model": str}}
+context_upgrade_tracker: Dict[str, Dict] = {}
+
+# 追踪器清理间隔（秒）
+TRACKER_CLEANUP_INTERVAL = 300
+_last_cleanup = time.time()
+
 
 def get_app():
     from app import main as app_main
     return app_main
 
 
+def get_session_key(request: Request) -> str:
+    """获取会话标识（使用API Key或IP）"""
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        return f"key:{auth[7:]}"
+    return f"ip:{request.client.host if request.client else 'unknown'}"
+
+
+def cleanup_tracker():
+    """清理过期的追踪记录"""
+    global _last_cleanup, context_upgrade_tracker
+    now = time.time()
+    if now - _last_cleanup > TRACKER_CLEANUP_INTERVAL:
+        # 清理超过5分钟的记录
+        expired = [k for k, v in context_upgrade_tracker.items() 
+                   if now - v.get("timestamp", 0) > 300]
+        for k in expired:
+            del context_upgrade_tracker[k]
+        _last_cleanup = now
+
+
 def parse_model_field(model: str, config) -> Tuple[str, Optional[object]]:
     """
     解析model字段
     返回: (实际model_id, 路由配置)
-    
-    格式:
-    - "gpt-4" -> 直接使用模型，失败后用默认路由回退
-    - "back-default" -> 使用名为default的路由配置
-    - "back-openai" -> 使用名为openai的路由配置
     """
     if model.startswith("back-"):
-        # 使用指定路由
-        route_name = model[5:]  # 去掉 "back-" 前缀
+        route_name = model[5:]
         for route in config.routes:
             if route.name == route_name:
-                return "*", route  # 返回通配符，让路由决定使用哪些后端
-        # 路由不存在，返回默认
+                return "*", route
         return "*", config.routes[0] if config.routes else None
     else:
-        # 直接使用模型名
         return model, config.routes[0] if config.routes else None
 
 
 def find_backends_for_model(model_id: str, config, backends: dict) -> List:
     """查找支持指定模型的后端"""
     if model_id == "*":
-        # 返回所有启用的后端
         return [b for b in backends.values() if b.status.healthy]
     
     available = []
@@ -60,17 +80,33 @@ def find_backends_for_model(model_id: str, config, backends: dict) -> List:
     return available
 
 
+def find_larger_context_model(app, current_model_id: str, current_context: int) -> Optional[Tuple[str, str, int]]:
+    """查找更大context的模型，返回 (model_id, backend_name, context_length)"""
+    best_model = None
+    best_context = current_context
+
+    for backend in app.backends.values():
+        if not backend.status.healthy:
+            continue
+        backend_config = app.config.get_backend_by_name(backend.name)
+        if backend_config:
+            for m in backend_config.models:
+                if m.enabled and m.context_length > best_context:
+                    best_model = (m.id, backend.name, m.context_length)
+                    best_context = m.context_length
+
+    return best_model
+
+
 def extract_request_params(body: Dict) -> Dict[str, Any]:
-    """提取请求参数（支持tools等所有OpenAI参数）"""
+    """提取请求参数"""
     params = {}
-    
     for key in ["temperature", "max_tokens", "top_p", "frequency_penalty", 
                 "presence_penalty", "stop", "n", "seed", "response_format",
                 "tools", "tool_choice", "functions", "function_call",
                 "logprobs", "top_logprobs"]:
         if key in body and body[key] is not None:
             params[key] = body[key]
-    
     return params
 
 
@@ -78,6 +114,10 @@ def extract_request_params(body: Dict) -> Dict[str, Any]:
 async def chat_completions(request: Request):
     """OpenAI兼容的chat/completions端点"""
     app = get_app()
+    session_key = get_session_key(request)
+
+    # 清理过期追踪记录
+    cleanup_tracker()
 
     try:
         body = await request.json()
@@ -98,12 +138,10 @@ async def chat_completions(request: Request):
 
     # 查找可用后端
     if model_id == "*" and route:
-        # 使用路由配置的模型列表
         available_backends = []
         for backend_name in route.fallback_order if route.fallback_order else [b.name for b in app.config.backends if b.enabled]:
             if backend_name in app.backends and app.backends[backend_name].status.healthy:
                 available_backends.append(app.backends[backend_name])
-        # 如果路由没有配置fallback_order，使用所有健康的后端
         if not available_backends:
             available_backends = [b for b in app.backends.values() if b.status.healthy]
     else:
@@ -123,17 +161,56 @@ async def chat_completions(request: Request):
     # 估算tokens
     estimated_tokens = sum(len(str(m.get("content", ""))) for m in messages) // 4
 
+    # 检查是否需要自动升级到更大context的模型
+    tracker_info = context_upgrade_tracker.get(session_key)
+    if tracker_info and tracker_info.get("count", 0) == 1:
+        # 第二次请求：自动路由到更大context的模型
+        larger_model = tracker_info.get("upgrade_to")
+        if larger_model:
+            model_id = larger_model[0]
+            # 更新追踪状态
+            tracker_info["count"] = 2
+            tracker_info["timestamp"] = time.time()
+            # 重新查找后端
+            available_backends = find_backends_for_model(model_id, app.config, app.backends)
+    elif tracker_info and tracker_info.get("count", 0) >= 2:
+        # 第三次请求：恢复原模型，清除追踪
+        model_id = tracker_info.get("original_model", model_id)
+        del context_upgrade_tracker[session_key]
+        available_backends = find_backends_for_model(model_id, app.config, app.backends)
+
     # 检查上下文长度是否超过80%
     backend_config = app.config.get_backend_by_name(available_backends[0].name) if available_backends else None
+    current_context = 0
+    
     if backend_config and model_id != "*":
         for m in backend_config.models:
-            if m.id == model_id and m.context_length > 0:
-                usage_ratio = estimated_tokens / m.context_length
-                if usage_ratio > 0.8:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"context used {int(usage_ratio * 100)}%"
-                    )
+            if m.id == model_id:
+                current_context = m.context_length
+                if current_context > 0:
+                    usage_ratio = estimated_tokens / current_context
+                    if usage_ratio > 0.8:
+                        # 查找更大context的模型
+                        larger = find_larger_context_model(app, model_id, current_context)
+                        
+                        # 记录追踪信息
+                        context_upgrade_tracker[session_key] = {
+                            "count": 1,
+                            "original_model": model_id,
+                            "upgrade_to": larger,
+                            "timestamp": time.time()
+                        }
+                        
+                        if larger:
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"context used {int(usage_ratio * 100)}%, will auto-route to {larger[0]} ({larger[2]} tokens) next time"
+                            )
+                        else:
+                            raise HTTPException(
+                                status_code=400,
+                                detail=f"context used {int(usage_ratio * 100)}%"
+                            )
                 break
 
     # 选择后端
@@ -193,7 +270,6 @@ async def chat_completions(request: Request):
                 actual_model = m.name
                 break
     elif backend_config and model_id == "*":
-        # 使用路由时，选择第一个启用的模型
         for m in backend_config.models:
             if m.enabled:
                 actual_model = m.name
