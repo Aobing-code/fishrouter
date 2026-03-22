@@ -1,35 +1,169 @@
 # OpenFish
 
-轻量级端侧AI总线 · 统一AI模型路由平台
+<div align="center">
 
-## 特性
+**轻量级端侧AI总线 · 统一AI模型路由平台**
 
-- **全平台兼容**: 支持 Ollama、OpenAI、Anthropic Claude、Google Gemini
-- **OpenAI格式统一**: 完全兼容 OpenAI API，所有后端统一输入输出
-- **多模态支持**: 支持图片、文本混合输入（Vision）
-- **多Key轮询**: 每个提供商支持多个 API Key，自动轮询负载均衡
-- **模型独立限速**: 每个模型可设置独立的 RPM/TPM 速率限制
-- **智能路由**: 最低延迟、轮询、随机、加权、优先级多种策略
-- **故障预判**: 基于速率限制阈值自动转移请求
-- **多级回退**: 支持多条回退规则，拖拽配置优先级
-- **超轻量**: 纯内存运行，无数据库依赖
-- **热更新**: JSON 配置修改即时生效，无需重启
-- **监控面板**: 网页实时查看后端状态、QPS、Token 统计
-- **Docker 支持**: 全平台通用，开箱即用
-- **服务化**: 支持 systemd 后台稳定运行
-- **SSL 可忽略**: 适配内网、自签证书、穿透场景
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://hub.docker.com)
+[![Python](https://img.shields.io/badge/Python-3.11+-green)](https://python.org)
+[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
+
+</div>
+
+---
+
+## 亮点特性
+
+| 特性 | 说明 |
+|------|------|
+| **全平台API统一** | 一个接口兼容 OpenAI、Claude、Gemini、Ollama，无需修改代码 |
+| **智能故障转移** | 速率限制预判、自动降级、多级回退，服务永不断线 |
+| **多Key轮询** | 每个提供商支持多个 API Key，自动负载均衡，突破单Key限速 |
+| **模型独立限速** | 每个模型可设置 RPM/TPM/并发数，精细控制成本 |
+| **多模态支持** | 图片、文本混合输入，Vision 全后端通用 |
+| **工具调用** | Function Calling 跨平台统一，OpenAI格式一调到底 |
+| **零依赖部署** | 纯内存运行，无数据库，Docker 一键启动 |
+| **实时监控** | Web 面板查看 QPS、延迟、Token 统计，一目了然 |
+
+---
+
+## 为什么选择 OpenFish？
+
+```diff
++ 一套代码，调用所有AI模型
++ 一个Key用完？自动切换下一个
++ 请求太多？自动转移到其他后端
++ 想用哪个模型？model字段直接指定
++ 想按策略路由？back-xxx一键切换
+```
+
+---
 
 ## 快速开始
 
-```bash
-# 安装依赖
-pip install -r requirements.txt
+### Docker 部署（推荐）
 
-# 启动服务
+```bash
+docker run -d -p 8080:8080 \
+  -v ./config.json:/app/config.json \
+  openfish
+```
+
+### 源码运行
+
+```bash
+pip install -r requirements.txt
 python -m app.main
 ```
 
 访问 `http://localhost:8080` 查看监控面板。
+
+---
+
+## 核心功能
+
+### 1. 统一API入口
+
+所有后端使用相同的 OpenAI 格式：
+
+```bash
+# 调用 OpenAI
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -d '{"model": "gpt-4", "messages": [...]}'
+
+# 调用 Claude（同一接口）
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -d '{"model": "claude-sonnet", "messages": [...]}'
+
+# 调用 Gemini（同一接口）
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -d '{"model": "gemini-pro", "messages": [...]}'
+
+# 调用本地 Ollama（同一接口）
+curl -X POST http://localhost:8080/v1/chat/completions \
+  -d '{"model": "llama3", "messages": [...]}'
+```
+
+### 2. 智能路由与故障转移
+
+```bash
+# 直接指定模型（失败后自动回退）
+curl -d '{"model": "gpt-4", ...}'
+
+# 使用指定路由策略
+curl -d '{"model": "back-default", ...}'
+curl -d '{"model": "back-cheap", ...}'
+curl -d '{"model": "back-fast", ...}'
+```
+
+### 3. 工具调用（Function Calling）
+
+```json
+{
+  "model": "gpt-4",
+  "messages": [{"role": "user", "content": "北京天气"}],
+  "tools": [{
+    "type": "function",
+    "function": {
+      "name": "get_weather",
+      "description": "获取天气",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "city": {"type": "string"}
+        }
+      }
+    }
+  }],
+  "tool_choice": "auto"
+}
+```
+
+### 4. 多模态 Vision
+
+```json
+{
+  "model": "gpt-4",
+  "messages": [{
+    "role": "user",
+    "content": [
+      {"type": "text", "text": "这是什么？"},
+      {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,..."}}
+    ]
+  }]
+}
+```
+
+### 5. 多Key轮询
+
+```json
+{
+  "name": "openai",
+  "type": "openai",
+  "api_keys": ["sk-key1", "sk-key2", "sk-key3"],
+  "models": [...]
+}
+```
+
+多个 Key 自动轮询，单个 Key 限速自动切换下一个。
+
+### 6. 模型独立限速
+
+```json
+{
+  "models": [{
+    "id": "gpt-4",
+    "name": "gpt-4-turbo",
+    "rate_limit": {
+      "rpm": 100,      // 每分钟最多100次请求
+      "tpm": 200000,   // 每分钟最多20万Token
+      "concurrent": 5  // 最多5个并发
+    }
+  }]
+}
+```
+
+---
 
 ## 配置说明
 
@@ -39,8 +173,7 @@ python -m app.main
 {
   "server": {
     "host": "0.0.0.0",
-    "port": 8080,
-    "log_level": "info"
+    "port": 8080
   },
   "backends": [
     {
@@ -49,7 +182,7 @@ python -m app.main
       "url": "http://localhost:11434",
       "api_keys": [],
       "weight": 10,
-      "enabled": true,
+      "priority": 1,
       "timeout": 120,
       "verify_ssl": false,
       "models": [
@@ -57,64 +190,43 @@ python -m app.main
           "id": "llama3",
           "name": "llama3",
           "context_length": 8192,
-          "enabled": true,
           "rate_limit": {"rpm": 30, "tpm": 50000, "concurrent": 3}
         }
       ],
-      "rate_limit": {"rpm": 0, "tpm": 0, "concurrent": 10},
-      "priority": 1
+      "rate_limit": {"rpm": 0, "tpm": 0, "concurrent": 10}
     },
     {
-      "name": "openai-gpt4",
+      "name": "openai",
       "type": "openai",
       "url": "https://api.openai.com/v1",
       "api_keys": ["sk-key1", "sk-key2", "sk-key3"],
       "weight": 5,
-      "enabled": true,
-      "timeout": 60,
-      "verify_ssl": true,
+      "priority": 2,
       "models": [
-        {
-          "id": "gpt-4",
-          "name": "gpt-4-turbo",
-          "context_length": 128000,
-          "enabled": true,
-          "rate_limit": {"rpm": 100, "tpm": 200000, "concurrent": 5}
-        },
-        {
-          "id": "gpt-4-mini",
-          "name": "gpt-4o-mini",
-          "context_length": 16384,
-          "enabled": true,
-          "rate_limit": {"rpm": 500, "tpm": 800000, "concurrent": 10}
-        }
+        {"id": "gpt-4", "name": "gpt-4-turbo", "context_length": 128000},
+        {"id": "gpt-4-mini", "name": "gpt-4o-mini", "context_length": 16384}
       ],
-      "rate_limit": {"rpm": 1000, "tpm": 1000000, "concurrent": 20},
-      "priority": 2
+      "rate_limit": {"rpm": 1000, "tpm": 1000000, "concurrent": 20}
     },
     {
-      "name": "anthropic-claude",
+      "name": "anthropic",
       "type": "anthropic",
       "url": "https://api.anthropic.com",
       "api_keys": ["sk-ant-key1", "sk-ant-key2"],
       "models": [
         {"id": "claude-sonnet", "name": "claude-3-5-sonnet-20241022"},
         {"id": "claude-haiku", "name": "claude-3-5-haiku-20241022"}
-      ],
-      "rate_limit": {"rpm": 500, "tpm": 500000, "concurrent": 10},
-      "priority": 2
+      ]
     },
     {
-      "name": "google-gemini",
+      "name": "google",
       "type": "google",
       "url": "https://generativelanguage.googleapis.com",
       "api_keys": ["gemini-key1"],
       "models": [
         {"id": "gemini-pro", "name": "gemini-1.5-pro"},
         {"id": "gemini-flash", "name": "gemini-1.5-flash"}
-      ],
-      "rate_limit": {"rpm": 200, "tpm": 3000000, "concurrent": 15},
-      "priority": 3
+      ]
     }
   ],
   "routes": [
@@ -123,27 +235,11 @@ python -m app.main
       "models": ["*"],
       "strategy": "latency",
       "failover": true,
-      "health_check_interval": 30,
-      "fallback_order": ["ollama-local", "openai-gpt4", "anthropic-claude"],
+      "fallback_order": ["ollama-local", "openai", "anthropic"],
       "fallback_rules": [
-        {
-          "name": "rate-limit-fallback",
-          "condition": "rate_limit",
-          "threshold": 0,
-          "backends": ["openai-gpt4", "anthropic-claude"]
-        },
-        {
-          "name": "error-fallback",
-          "condition": "error",
-          "threshold": 3,
-          "backends": ["anthropic-claude", "google-gemini"]
-        },
-        {
-          "name": "latency-fallback",
-          "condition": "latency",
-          "threshold": 10.0,
-          "backends": ["anthropic-claude"]
-        }
+        {"name": "rate-limit", "condition": "rate_limit", "backends": ["openai", "anthropic"]},
+        {"name": "error", "condition": "error", "threshold": 3, "backends": ["anthropic"]},
+        {"name": "latency", "condition": "latency", "threshold": 10.0, "backends": ["anthropic"]}
       ]
     }
   ],
@@ -154,191 +250,42 @@ python -m app.main
 }
 ```
 
-### 配置字段说明
-
-#### 后端配置 (backends)
-
-| 字段 | 说明 |
-|------|------|
-| `name` | 后端名称，唯一标识 |
-| `type` | 后端类型: `ollama`, `openai`, `anthropic`, `google` |
-| `url` | 后端地址 |
-| `api_keys` | API Key 数组，自动轮询负载均衡 |
-| `weight` | 权重，用于加权路由策略 |
-| `priority` | 优先级，数字越小优先级越高 |
-| `timeout` | 请求超时（秒） |
-| `verify_ssl` | 是否验证 SSL 证书 |
-| `rate_limit` | 提供商级别速率限制 |
-| `models` | 模型列表 |
-
-#### 模型配置 (models)
-
-| 字段 | 说明 |
-|------|------|
-| `id` | 模型 ID，请求时使用 |
-| `name` | 实际模型名称，发送给后端 |
-| `context_length` | 上下文长度 |
-| `enabled` | 是否启用 |
-| `rate_limit` | 模型独立速率限制 |
-
-#### 速率限制 (rate_limit)
-
-| 字段 | 说明 |
-|------|------|
-| `rpm` | 每分钟请求数，0 表示不限制 |
-| `tpm` | 每分钟 Token 数，0 表示不限制 |
-| `concurrent` | 最大并发数，0 表示不限制 |
-
-#### 回退规则 (fallback_rules)
-
-| 字段 | 说明 |
-|------|------|
-| `name` | 规则名称 |
-| `condition` | 触发条件: `error`, `timeout`, `rate_limit`, `latency` |
-| `threshold` | 阈值（延迟秒数或错误次数） |
-| `backends` | 回退后端列表 |
-
-## API 接口
-
-### Chat Completions
-
-#### 直接使用模型名
-
-通过 model ID 选择模型，失败后使用默认路由回退：
-
-```bash
-curl http://localhost:8080/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer sk-openfish" \
-  -d '{
-    "model": "gpt-4",
-    "messages": [{"role": "user", "content": "Hello"}],
-    "temperature": 0.7,
-    "stream": false
-  }'
-```
-
-#### 使用指定路由 (back-xxx)
-
-使用 `back-路由名` 格式，按指定路由的回退规则处理：
-
-```bash
-# 使用名为 "default" 的路由配置
-curl http://localhost:8080/v1/chat/completions \
-  -d '{"model": "back-default", "messages": [...]}'
-
-# 使用名为 "openai" 的路由配置
-curl http://localhost:8080/v1/chat/completions \
-  -d '{"model": "back-openai", "messages": [...]}'
-```
-
-### 工具调用 (Function Calling)
-
-支持 OpenAI 格式的 tools 参数：
-
-```bash
-curl http://localhost:8080/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "gpt-4",
-    "messages": [{"role": "user", "content": "北京今天天气怎么样？"}],
-    "tools": [
-      {
-        "type": "function",
-        "function": {
-          "name": "get_weather",
-          "description": "获取指定城市的天气信息",
-          "parameters": {
-            "type": "object",
-            "properties": {
-              "city": {
-                "type": "string",
-                "description": "城市名称"
-              }
-            },
-            "required": ["city"]
-          }
-        }
-      }
-    ],
-    "tool_choice": "auto"
-  }'
-```
-
-支持的后端：
-- **OpenAI**: 原生支持
-- **Anthropic**: 自动转换格式
-- **Google Gemini**: 自动转换为 function calling
-- **Ollama**: 需要模型支持
-
-### 多模态 Vision（图片理解）
-
-支持 base64 图片和 URL 图片：
-
-```bash
-# Base64 图片
-curl http://localhost:8080/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "gpt-4",
-    "messages": [{
-      "role": "user",
-      "content": [
-        {"type": "text", "text": "这张图片是什么?"},
-        {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,/9j/4AAQ..."}}
-      ]
-    }]
-  }'
-
-# URL 图片
-curl http://localhost:8080/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "claude-sonnet",
-    "messages": [{
-      "role": "user",
-      "content": [
-        {"type": "text", "text": "Describe this image"},
-        {"type": "image_url", "image_url": {"url": "https://example.com/image.jpg"}}
-      ]
-    }]
-  }'
-```
-
-### Embeddings
-
-```bash
-curl http://localhost:8080/v1/embeddings \
-  -H "Content-Type: application/json" \
-  -d '{"model": "text-embedding-004", "input": "Hello world"}'
-```
-
-### Models
-
-```bash
-curl http://localhost:8080/v1/models
-```
-
-### 监控接口
-
-```bash
-# 系统状态
-curl http://localhost:8080/api/monitor/status
-
-# 配置信息
-curl http://localhost:8080/api/config
-```
+---
 
 ## 路由策略
 
 | 策略 | 说明 |
 |------|------|
 | `latency` | 选择延迟最低的后端（默认） |
-| `round_robin` | 轮询 |
-| `random` | 随机 |
-| `weighted` | 按权重 |
-| `priority` | 按优先级 |
+| `round_robin` | 轮询分发 |
+| `random` | 随机选择 |
+| `weighted` | 按权重分发 |
+| `priority` | 按优先级选择 |
 | `custom` | 自定义回退顺序 |
+
+---
+
+## 故障转移规则
+
+| 条件 | 说明 |
+|------|------|
+| `rate_limit` | 触发速率限制时自动转移 |
+| `error` | 错误次数超过阈值时转移 |
+| `latency` | 延迟超过阈值时转移 |
+| `timeout` | 请求超时时转移 |
+
+---
+
+## 支持的后端
+
+| 后端 | 类型 | 工具调用 | 多模态 |
+|------|------|---------|--------|
+| OpenAI / Azure / 兼容接口 | `openai` | ✅ | ✅ |
+| Anthropic Claude | `anthropic` | ✅ | ✅ |
+| Google Gemini | `google` | ✅ | ✅ |
+| Ollama | `ollama` | ✅ | ✅ |
+
+---
 
 ## Docker 部署
 
@@ -357,6 +304,8 @@ docker run -d \
 docker-compose up -d
 ```
 
+---
+
 ## Linux 服务化部署
 
 ```bash
@@ -371,49 +320,43 @@ sudo systemctl start openfish
 sudo journalctl -u openfish -f
 ```
 
+---
+
 ## 项目结构
 
 ```
 openfish/
 ├── app/
-│   ├── main.py          # 主入口
-│   ├── config.py        # 配置管理
-│   ├── api/             # API 端点
-│   │   ├── chat.py      # Chat Completions
+│   ├── main.py           # 主入口
+│   ├── config.py         # 配置管理（热更新）
+│   ├── api/
+│   │   ├── chat.py       # Chat Completions（工具调用/多模态）
 │   │   ├── embeddings.py # Embeddings
-│   │   ├── models.py    # Models
-│   │   ├── monitor.py   # 监控
-│   │   └── config.py    # 配置管理
-│   ├── backends/        # 后端适配器
-│   │   ├── base.py      # 基类
-│   │   ├── ollama.py    # Ollama
-│   │   ├── openai.py    # OpenAI 兼容
-│   │   ├── anthropic.py # Anthropic Claude
-│   │   └── google.py    # Google Gemini
-│   ├── core/            # 核心组件
-│   │   ├── balancer.py  # 负载均衡
-│   │   ├── auth.py      # API Key 认证
-│   │   ├── stats.py     # 统计追踪
-│   │   └── ratelimit.py # 速率限制
-│   └── web/             # 监控面板
-├── static/              # 前端静态文件
-├── config.json          # 配置文件
-├── Dockerfile           # Docker 镜像
-├── docker-compose.yml   # Docker 编排
-├── .dockerignore        # Docker 忽略文件
-├── .gitignore           # Git 忽略文件
-└── requirements.txt     # 依赖
+│   │   ├── models.py     # Models
+│   │   ├── monitor.py    # 监控API
+│   │   └── config.py     # 配置管理API
+│   ├── backends/
+│   │   ├── base.py       # 后端基类
+│   │   ├── openai.py     # OpenAI 兼容
+│   │   ├── anthropic.py  # Anthropic Claude
+│   │   ├── google.py     # Google Gemini
+│   │   └── ollama.py     # Ollama
+│   ├── core/
+│   │   ├── balancer.py   # 负载均衡
+│   │   ├── ratelimit.py  # 速率限制
+│   │   ├── auth.py       # API Key 认证
+│   │   └── stats.py      # 统计追踪
+│   └── web/
+│       └── dashboard.py  # 监控面板
+├── static/
+│   └── index.html        # 前端界面
+├── config.example.json   # 示例配置
+├── Dockerfile
+├── docker-compose.yml
+└── requirements.txt
 ```
 
-## Star History
-
-<a href="https://www.star-history.com/?repos=Aobing-code%2Fopenfish&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=Aobing-code/openfish&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=Aobing-code/openfish&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=Aobing-code/openfish&type=date&legend=top-left" />
- </picture>
-</a>
+---
 
 ## License
 
