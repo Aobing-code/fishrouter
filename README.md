@@ -2,6 +2,10 @@
 
 <div align="center">
 
+**像鱼一样穿梭于API之间**
+
+**Swimming through APIs like a fish**
+
 **轻量级端侧AI总线 · 统一AI模型路由平台**
 
 **Lightweight Edge AI Bus · Unified AI Model Routing Platform**
@@ -216,7 +220,7 @@ curl -d '{"model": "back-fast", ...}'
   ],
   "auth": {
     "enabled": false,
-    "api_keys": ["sk-openfish"]
+    "api_keys": ["sk-fishrouter"]
   }
 }
 ```
@@ -266,7 +270,7 @@ docker build -t fishrouter .
 
 # 运行容器 | Run container
 docker run -d \
-  --name openfish \
+  --name fishrouter \
   -p 8080:8080 \
   -v $(pwd)/config.json:/app/config.json \
   fishrouter
@@ -296,7 +300,7 @@ sudo journalctl -u fishrouter -f
 ## 项目结构 | Project Structure
 
 ```
-openfish/
+fishrouter/
 ├── app/
 │   ├── main.py           # 主入口 | Main entry
 │   ├── config.py         # 配置管理 | Config management
@@ -320,12 +324,25 @@ openfish/
 │   └── web/
 │       └── dashboard.py  # 监控面板 | Dashboard
 ├── static/
-│   └── index.html        # 前端界面 | Frontend
+│   ├── index.html        # 前端界面 | Frontend
+│   └── login.html        # 登录页面 | Login
 ├── config.example.json   # 示例配置 | Example config
 ├── Dockerfile
 ├── docker-compose.yml
 └── requirements.txt
 ```
+
+---
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=Aobing-code%2Ffishrouter&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=Aobing-code/fishrouter&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=Aobing-code/fishrouter&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=Aobing-code/fishrouter&type=date&legend=top-left" />
+ </picture>
+</a>
 
 ---
 
