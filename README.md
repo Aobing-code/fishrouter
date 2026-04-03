@@ -281,7 +281,61 @@ docker-compose up -d
 
 ---
 
-## Linux 服务化 | Linux Service
+## Linux 一键安装 | Linux One-Click Install
+
+```bash
+curl -sSL https://raw.githubusercontent.com/Aobing-code/fishrouter/main/install.sh | sudo bash
+```
+
+**安装流程 | Installation Flow:**
+
+```
+1. 检查 root 权限 | Check root privileges
+   ↓
+2. 检测系统架构 | Detect architecture (x86_64 / aarch64)
+   ↓
+3. 安装依赖 (curl/wget/jq) | Install dependencies
+   - 自动识别 apt / yum / pacman
+   ↓
+4. 下载二进制文件 | Download binary from GitHub Releases
+   - 解压到 /opt/fishrouter/
+   - 如下载失败，自动从源码编译
+   ↓
+5. 创建 systemd 服务 | Create systemd service
+   - 开机自启 | Auto-start on boot
+   - 崩溃自动重启 | Auto-restart on crash
+   ↓
+6. 生成配置文件 | Generate config.json
+   ↓
+7. 启动服务 | Start service
+   - 输出访问地址和管理命令
+```
+
+**安装后管理 | Post-Install Management:**
+
+```bash
+# 查看状态 | Check status
+sudo systemctl status fishrouter
+
+# 查看日志 | View logs
+sudo journalctl -u fishrouter -f
+
+# 重启服务 | Restart
+sudo systemctl restart fishrouter
+
+# 编辑配置 | Edit config
+sudo nano /opt/fishrouter/config.json
+
+# 卸载 | Uninstall
+sudo systemctl stop fishrouter
+sudo systemctl disable fishrouter
+sudo rm -rf /opt/fishrouter /etc/systemd/system/fishrouter.service
+sudo systemctl daemon-reload
+```
+
+---
+
+## Linux 手动部署 | Linux Manual Deploy
 
 ```bash
 # 复制服务文件 | Copy service file
