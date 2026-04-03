@@ -123,14 +123,14 @@ jobs:
             app/gui.py
 
       - name: Prepare portable package
-        shell: bash
+        shell: pwsh
         run: |
-          mkdir -p portable
-          cp dist/FishRouter.exe portable/
-          cp dist/fishrouter-server.exe portable/
-          cp config.example.json portable/config.json
-          cp README.md portable/
-          cd portable && tar -czf ../FishRouter-Windows-Portable.tar.gz *
+          New-Item -ItemType Directory -Path portable -Force
+          Copy-Item dist/FishRouter.exe portable/
+          Copy-Item dist/fishrouter-server.exe portable/
+          Copy-Item config.example.json portable/config.json
+          Copy-Item README.md portable/
+          Compress-Archive -Path portable/* -DestinationPath FishRouter-Windows-Portable.zip
 
       - name: Install NSIS
         run: |
@@ -150,8 +150,7 @@ jobs:
           cp dist/FishRouter.exe .
           cp dist/fishrouter-server.exe .
           cp config.example.json config.json
-          cp README.md .
-          cp installer.nsi .
+          # README.md and installer.nsi are already in the repo root
 
       - name: Build EXE Installer
         shell: cmd
@@ -163,7 +162,7 @@ jobs:
         with:
           name: FishRouter-Windows
           path: |
-            FishRouter-Windows-Portable.tar.gz
+            FishRouter-Windows-Portable.zip
             FishRouter-Setup.exe
 
   release:
@@ -210,7 +209,7 @@ jobs:
             echo ""
             echo "#### 🪟 Windows"
             echo "- **EXE Installer** (推荐 | Recommended): FishRouter-Setup.exe"
-            echo "- **Portable** (单文件开箱即用 | No install): FishRouter-Windows-Portable.tar.gz"
+            echo "- **Portable** (单文件开箱即用 | No install): FishRouter-Windows-Portable.zip"
             echo ""
             echo "#### 🐧 Linux"
             echo "- **一键安装 | One-click**: \`curl -sSL https://raw.githubusercontent.com/Aobing-code/fishrouter/main/install.sh | sudo bash\`"
@@ -222,7 +221,7 @@ jobs:
             echo "### 🏗️ Build Targets"
             echo ""
             echo "- 🐧 Linux AMD64"
-            echo "- 🪟 Windows AMD64 (EXE Installer + Portable)"
+            echo "- 🪟 Windows AMD64 (EXE Installer + Portable ZIP)"
             echo "- 🍎 macOS ARM64 (Apple Silicon)"
             echo "CHANGELOG_EOF"
           } >> $GITHUB_OUTPUT
@@ -240,7 +239,7 @@ jobs:
           body: ${{ steps.notes.outputs.CHANGELOG }}
           files: |
             artifacts/FishRouter-Windows/FishRouter-Setup.exe
-            artifacts/FishRouter-Windows/FishRouter-Windows-Portable.tar.gz
+            artifacts/FishRouter-Windows/FishRouter-Windows-Portable.zip
             artifacts/fishrouter-server-linux-amd64/*.tar.gz
             artifacts/fishrouter-server-macos-arm64/*.tar.gz
           draft: false
