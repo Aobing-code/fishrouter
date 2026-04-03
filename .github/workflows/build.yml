@@ -156,7 +156,7 @@ jobs:
           cp dist/FishRouter.exe .
           cp dist/fishrouter-server.exe .
           cp config.example.json config.json
-          # README.md and installer.nsi are already in the repo root
+          cp icon.ico .
 
       - name: Build EXE Installer
         shell: cmd

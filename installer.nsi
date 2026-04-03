@@ -15,10 +15,11 @@ Section "Install"
   File "fishrouter-server.exe"
   File "config.json"
   File "README.md"
+  File "icon.ico"
 
   CreateDirectory "$SMPROGRAMS\FishRouter"
-  CreateShortCut "$SMPROGRAMS\FishRouter\FishRouter.lnk" "$INSTDIR\FishRouter.exe"
-  CreateShortCut "$DESKTOP\FishRouter.lnk" "$INSTDIR\FishRouter.exe"
+  CreateShortCut "$SMPROGRAMS\FishRouter\FishRouter.lnk" "$INSTDIR\FishRouter.exe" "" "$INSTDIR\icon.ico"
+  CreateShortCut "$DESKTOP\FishRouter.lnk" "$INSTDIR\FishRouter.exe" "" "$INSTDIR\icon.ico"
 
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FishRouter" "DisplayName" "FishRouter"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FishRouter" "UninstallString" "$INSTDIR\uninstall.exe"
