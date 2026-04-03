@@ -36,8 +36,8 @@
 | **Tool Calling** | Unified Function Calling in OpenAI format |
 | **零依赖部署** | 纯内存运行，无数据库，Docker 一键启动 |
 | **Zero Dependencies** | In-memory, no database, Docker one-click deploy |
-| **实时监控** | Web 面板查看 QPS、延迟、Token 统计 |
-| **Real-time Monitor** | Web dashboard for QPS, latency, token stats |
+| **实时监控** | Linux: Web 面板 | Windows: 本地 GUI 应用 |
+| **Real-time Monitor** | Linux: Web dashboard | Windows: Native GUI app |
 
 ---
 
@@ -333,14 +333,51 @@ docker-compose up -d
 
 ---
 
+### Windows 部署 | Windows Deploy
+
+**方式一：安装包安装 | Option 1: Installer**
+1. 下载 `FishRouter-Setup.exe` 从 [Releases](https://github.com/Aobing-code/fishrouter/releases)
+2. 双击安装，自动创建桌面快捷方式和开始菜单
+3. 打开 FishRouter，通过 GUI 管理所有配置
+
+**方式二：便携版 | Option 2: Portable**
+1. 下载 `FishRouter-Windows-Portable.zip`
+2. 解压到任意目录
+3. 双击 `FishRouter.exe` 直接运行
+
+**Windows GUI 功能 | Windows GUI Features:**
+- 🏠 控制台 — 启动/停止服务器，查看实时日志
+- 🔗 后端管理 — 添加/编辑/删除后端，支持多 Key 配置
+- 🛤️ 路由配置 — 策略选择、回退顺序拖拽设置
+- ⚙️ 系统设置 — 端口、认证、开机自启、配置文件编辑
+- 🔄 自动更新 — 一键检查并下载最新版本
+
+### macOS 部署 | macOS Deploy
+
+```bash
+# 下载并解压
+curl -sSL -o fishrouter.tar.gz https://github.com/Aobing-code/fishrouter/releases/latest/download/fishrouter-server-macos-arm64.tar.gz
+tar -xzf fishrouter.tar.gz
+
+# 运行
+./fishrouter-server --port 8080
+```
+
+---
+
 ## 下载 | Downloads
 
-| 平台 | 说明 |
-|------|------|
-| 🪟 Windows EXE Installer | FishRouter-Setup.exe (推荐) |
-| 🪟 Windows Portable | FishRouter-Windows-Portable.zip (单文件开箱即用) |
-| 🐧 Linux | `curl -sSL .../install.sh \| sudo bash` |
-| 🍎 macOS ARM64 | fishrouter-server-macos-arm64.tar.gz |
+| 平台 Platform | 文件 File | 说明 Description |
+|---------------|-----------|------------------|
+| 🪟 Windows | `FishRouter-Setup.exe` | 安装包（推荐）Installer |
+| 🪟 Windows | `FishRouter-Windows-Portable.zip` | 便携版，开箱即用 Portable |
+| 🐧 Linux | `install.sh` 一键脚本 | 自动下载 + systemd 服务 One-click |
+| 🐧 Linux | `fishrouter-server-linux-amd64.tar.gz` | 服务端二进制 Server binary |
+| 🍎 macOS ARM64 | `fishrouter-server-macos-arm64.tar.gz` | Apple Silicon |
+
+> **💡 管理方式 | Management:**
+> - **Linux/macOS**: Web UI → `http://localhost:8080`
+> - **Windows**: 本地 GUI 应用（无需浏览器）Native GUI app (no browser needed)
 
 ---
 
