@@ -125,6 +125,7 @@ jobs:
           pyinstaller --name FishRouter \
             --onefile \
             --windowed \
+            --icon=icon.ico \
             app/gui.py
 
       - name: Prepare portable package

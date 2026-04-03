@@ -26,6 +26,11 @@ class FishRouterApp:
         self.root.geometry("1000x700")
         self.root.minsize(800, 600)
         
+        # Set window icon
+        icon_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "icon.ico")
+        if os.path.exists(icon_path):
+            self.root.iconbitmap(icon_path)
+        
         self.root.update_idletasks()
         x = (self.root.winfo_screenwidth() - 1000) // 2
         y = (self.root.winfo_screenheight() - 700) // 2
