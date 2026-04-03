@@ -132,10 +132,10 @@ jobs:
           cp README.md portable/
           cd portable && tar -czf ../FishRouter-Windows-Portable.tar.gz *
 
-      - name: Install WiX Toolset
+      - name: Install NSIS
         run: |
-          choco install wixtoolset -y
-          echo "C:\Program Files (x86)\WiX Toolset v3.14\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          choco install nsis -y
+          echo "C:\Program Files (x86)\NSIS" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Generate version
         id: version
@@ -144,58 +144,60 @@ jobs:
           COMMIT_COUNT=$(git rev-list --count HEAD)
           echo "version=0.$COMMIT_COUNT.0" >> $GITHUB_OUTPUT
 
-      - name: Create WiX source
+      - name: Create NSIS installer script
         shell: bash
         run: |
-          cat > installer.wxs << 'WIXEOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-            <Product Id="*" Name="FishRouter" Language="1033" Version="$(var.Version)" Manufacturer="FishRouter" UpgradeCode="a1b2c3d4-e5f6-7890-abcd-ef1234567890">
-              <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
-              <MajorUpgrade DowngradeErrorMessage="A newer version of FishRouter is already installed." />
-              <MediaTemplate EmbedCab="yes" />
+          cat > installer.nsi << 'NSISEOF'
+          !include "MUI2.nsh"
 
-              <Feature Id="ProductFeature" Title="FishRouter" Level="1">
-                <ComponentGroupRef Id="ProductComponents" />
-                <ComponentRef Id="ApplicationShortcut" />
-              </Feature>
+          Name "FishRouter"
+          OutFile "FishRouter-Setup.exe"
+          InstallDir "$PROGRAMFILES64\FishRouter"
+          RequestExecutionLevel admin
 
-              <Directory Id="TARGETDIR" Name="SourceDir">
-                <Directory Id="ProgramFiles64Folder">
-                  <Directory Id="INSTALLFOLDER" Name="FishRouter">
-                    <Component Id="ProductComponents" Guid="*">
-                      <File Id="FishRouterExe" Source="FishRouter.exe" KeyPath="yes">
-                        <Shortcut Id="StartMenuShortcut" Name="FishRouter" Directory="ProgramMenuFolder" WorkingDirectory="INSTALLFOLDER" />
-                      </File>
-                      <File Id="ServerExe" Source="fishrouter-server.exe" />
-                      <File Id="ConfigJson" Source="config.json" />
-                      <File Id="ReadmeMd" Source="README.md" />
-                    </Component>
-                  </Directory>
-                </Directory>
-                <Directory Id="ProgramMenuFolder">
-                  <Component Id="ApplicationShortcut" Guid="*">
-                    <Shortcut Id="ApplicationStartMenuShortcut" Name="FishRouter" Target="[INSTALLFOLDER]FishRouter.exe" WorkingDirectory="INSTALLFOLDER" />
-                    <RemoveFolder Id="ProgramMenuFolder" On="uninstall" />
-                    <RegistryValue Root="HKCU" Key="Software\FishRouter" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-                  </Component>
-                </Directory>
-              </Directory>
+          !define MUI_ICON ""
+          !insertmacro MUI_PAGE_DIRECTORY
+          !insertmacro MUI_PAGE_INSTFILES
+          !insertmacro MUI_LANGUAGE "English"
 
-              <Property Id="WIXUI_INSTALLDIR" Value="INSTALLFOLDER" />
-            </Product>
-          </Wix>
-          WIXEOF
+          Section "Install"
+            SetOutPath "$INSTDIR"
+            File "FishRouter.exe"
+            File "fishrouter-server.exe"
+            File "config.json"
+            File "README.md"
 
-      - name: Build MSI
+            CreateDirectory "$SMPROGRAMS\FishRouter"
+            CreateShortCut "$SMPROGRAMS\FishRouter\FishRouter.lnk" "$INSTDIR\FishRouter.exe"
+            CreateShortCut "$DESKTOP\FishRouter.lnk" "$INSTDIR\FishRouter.exe"
+
+            WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FishRouter" "DisplayName" "FishRouter"
+            WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FishRouter" "UninstallString" "$INSTDIR\uninstall.exe"
+            WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FishRouter" "InstallLocation" "$INSTDIR"
+            WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FishRouter" "NoModify" 1
+            WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FishRouter" "NoRepair" 1
+
+            WriteUninstaller "$INSTDIR\uninstall.exe"
+          SectionEnd
+
+          Section "Uninstall"
+            Delete "$INSTDIR\*.*"
+            RMDir "$INSTDIR"
+            Delete "$SMPROGRAMS\FishRouter\FishRouter.lnk"
+            RMDir "$SMPROGRAMS\FishRouter"
+            Delete "$DESKTOP\FishRouter.lnk"
+            DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FishRouter"
+          SectionEnd
+          NSISEOF
+
+      - name: Build EXE Installer
         shell: cmd
         run: |
           copy dist\FishRouter.exe FishRouter.exe
           copy dist\fishrouter-server.exe fishrouter-server.exe
           copy config.example.json config.json
           copy README.md README.md
-          "C:\Program Files (x86)\WiX Toolset v3.14\bin\candle.exe" -dVersion=${{ steps.version.outputs.version }} installer.wxs
-          "C:\Program Files (x86)\WiX Toolset v3.14\bin\light.exe" -ext WixUIExtension installer.wixobj -out FishRouter-Setup.msi
+          makensis installer.nsi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -247,7 +249,7 @@ jobs:
           echo "### 📥 Downloads" >> $GITHUB_OUTPUT
           echo "" >> $GITHUB_OUTPUT
           echo "#### 🪟 Windows" >> $GITHUB_OUTPUT
-          echo "- **MSI Installer** (推荐 | Recommended): FishRouter-Setup.msi" >> $GITHUB_OUTPUT
+          echo "- **EXE Installer** (推荐 | Recommended): FishRouter-Setup.exe" >> $GITHUB_OUTPUT
           echo "- **Portable** (单文件开箱即用 | No install): FishRouter-Windows-Portable.tar.gz" >> $GITHUB_OUTPUT
           echo "" >> $GITHUB_OUTPUT
           echo "#### 🐧 Linux" >> $GITHUB_OUTPUT
@@ -260,7 +262,7 @@ jobs:
           echo "### 🏗️ Build Targets" >> $GITHUB_OUTPUT
           echo "" >> $GITHUB_OUTPUT
           echo "- 🐧 Linux AMD64" >> $GITHUB_OUTPUT
-          echo "- 🪟 Windows AMD64 (MSI + Portable)" >> $GITHUB_OUTPUT
+          echo "- 🪟 Windows AMD64 (EXE Installer + Portable)" >> $GITHUB_OUTPUT
           echo "- 🍎 macOS ARM64 (Apple Silicon)" >> $GITHUB_OUTPUT
           echo 'EOF' >> $GITHUB_OUTPUT
 
@@ -276,7 +278,7 @@ jobs:
           name: "FishRouter ${{ steps.version.outputs.version }}"
           body: ${{ steps.notes.outputs.CHANGELOG }}
           files: |
-            artifacts/FishRouter-Windows/FishRouter-Setup.msi
+            artifacts/FishRouter-Windows/FishRouter-Setup.exe
             artifacts/FishRouter-Windows/FishRouter-Windows-Portable.tar.gz
             artifacts/fishrouter-server-linux-amd64/*.tar.gz
             artifacts/fishrouter-server-macos-arm64/*.tar.gz
