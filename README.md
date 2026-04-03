@@ -43,6 +43,58 @@
 
 ## 快速开始 | Quick Start
 
+### Linux 一键安装 | Linux One-Click Install
+
+```bash
+curl -sSL https://raw.githubusercontent.com/Aobing-code/fishrouter/main/install.sh | sudo bash
+```
+
+**安装流程 | Installation Flow:**
+
+```
+1. 检查 root 权限 | Check root privileges
+   ↓
+2. 检测系统架构 | Detect architecture (x86_64 / aarch64)
+   ↓
+3. 安装依赖 (curl/wget/jq) | Install dependencies
+   - 自动识别 apt / yum / pacman
+   ↓
+4. 下载二进制文件 | Download binary from GitHub Releases
+   - 解压到 /opt/fishrouter/
+   - 如下载失败，自动从源码编译
+   ↓
+5. 创建 systemd 服务 | Create systemd service
+   - 开机自启 | Auto-start on boot
+   - 崩溃自动重启 | Auto-restart on crash
+   ↓
+6. 生成配置文件 | Generate config.json
+   ↓
+7. 启动服务 | Start service
+   - 输出访问地址和管理命令
+```
+
+**安装后管理 | Post-Install Management:**
+
+```bash
+# 查看状态 | Check status
+sudo systemctl status fishrouter
+
+# 查看日志 | View logs
+sudo journalctl -u fishrouter -f
+
+# 重启服务 | Restart
+sudo systemctl restart fishrouter
+
+# 编辑配置 | Edit config
+sudo nano /opt/fishrouter/config.json
+
+# 卸载 | Uninstall
+sudo systemctl stop fishrouter
+sudo systemctl disable fishrouter
+sudo rm -rf /opt/fishrouter /etc/systemd/system/fishrouter.service
+sudo systemctl daemon-reload
+```
+
 ### Docker 部署 | Docker Deploy
 
 ```bash
@@ -281,72 +333,50 @@ docker-compose up -d
 
 ---
 
-## Linux 一键安装 | Linux One-Click Install
+## 下载 | Downloads
 
-```bash
-curl -sSL https://raw.githubusercontent.com/Aobing-code/fishrouter/main/install.sh | sudo bash
-```
-
-**安装流程 | Installation Flow:**
-
-```
-1. 检查 root 权限 | Check root privileges
-   ↓
-2. 检测系统架构 | Detect architecture (x86_64 / aarch64)
-   ↓
-3. 安装依赖 (curl/wget/jq) | Install dependencies
-   - 自动识别 apt / yum / pacman
-   ↓
-4. 下载二进制文件 | Download binary from GitHub Releases
-   - 解压到 /opt/fishrouter/
-   - 如下载失败，自动从源码编译
-   ↓
-5. 创建 systemd 服务 | Create systemd service
-   - 开机自启 | Auto-start on boot
-   - 崩溃自动重启 | Auto-restart on crash
-   ↓
-6. 生成配置文件 | Generate config.json
-   ↓
-7. 启动服务 | Start service
-   - 输出访问地址和管理命令
-```
-
-**安装后管理 | Post-Install Management:**
-
-```bash
-# 查看状态 | Check status
-sudo systemctl status fishrouter
-
-# 查看日志 | View logs
-sudo journalctl -u fishrouter -f
-
-# 重启服务 | Restart
-sudo systemctl restart fishrouter
-
-# 编辑配置 | Edit config
-sudo nano /opt/fishrouter/config.json
-
-# 卸载 | Uninstall
-sudo systemctl stop fishrouter
-sudo systemctl disable fishrouter
-sudo rm -rf /opt/fishrouter /etc/systemd/system/fishrouter.service
-sudo systemctl daemon-reload
-```
+| 平台 | 说明 |
+|------|------|
+| 🪟 Windows EXE Installer | FishRouter-Setup.exe (推荐) |
+| 🪟 Windows Portable | FishRouter-Windows-Portable.zip (单文件开箱即用) |
+| 🐧 Linux | `curl -sSL .../install.sh \| sudo bash` |
+| 🍎 macOS ARM64 | fishrouter-server-macos-arm64.tar.gz |
 
 ---
 
-## Linux 手动部署 | Linux Manual Deploy
+## 配置说明 | Configuration
 
-```bash
-# 复制服务文件 | Copy service file
-sudo cp fishrouter.service /etc/systemd/system/
-
-# 启用并启动 | Enable and start
-sudo systemctl enable fishrouter
-sudo systemctl start fishrouter
-
-# 查看日志 | View logs
-sudo journalctl -u fishrouter -f
+```
+fishrouter/
+├── app/
+│   ├── main.py           # 主入口 | Main entry
+│   ├── config.py         # 配置管理 | Config management
+│   ├── api/
+│   │   ├── chat.py       # Chat Completions
+│   │   ├── embeddings.py # Embeddings
+│   │   ├── models.py     # Models
+│   │   ├── monitor.py    # 监控API | Monitor API
+│   │   └── config.py     # 配置API | Config API
+│   ├── backends/
+│   │   ├── base.py       # 后端基类 | Backend base
+│   │   ├── openai.py     # OpenAI 兼容
+│   │   ├── anthropic.py  # Anthropic Claude
+│   │   ├── google.py     # Google Gemini
+│   │   └── ollama.py     # Ollama
+│   ├── core/
+│   │   ├── balancer.py   # 负载均衡 | Load balancer
+│   │   ├── ratelimit.py  # 速率限制 | Rate limiter
+│   │   ├── auth.py       # API Key 认证
+│   │   └── stats.py      # 统计追踪 | Statistics
+│   └── web/
+│       └── dashboard.py  # 监控面板 | Dashboard
+├── static/
+│   ├── index.html        # 前端界面 | Frontend
+│   └── login.html        # 登录页面 | Login
+├── config.example.json   # 示例配置 | Example config
+├── Dockerfile
+├── docker-compose.yml
+└── requirements.txt
 ```
 
 ---
