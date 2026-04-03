@@ -10,8 +10,8 @@ permissions:
   actions: write
 
 jobs:
-  build:
-    name: Build ${{ matrix.os }}
+  build-server:
+    name: Build Server ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -41,10 +41,10 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
-      - name: Build with PyInstaller
+      - name: Build server
         shell: bash
         run: |
-          pyinstaller --name fishrouter \
+          pyinstaller --name fishrouter-server \
             --onefile \
             --add-data "static:static" \
             --add-data "config.example.json:." \
@@ -59,31 +59,91 @@ jobs:
             --hidden-import httpx \
             app/main.py
 
-      - name: Prepare release assets
+      - name: Prepare server package
         shell: bash
         run: |
           mkdir -p release
           if [ "${{ runner.os }}" = "Windows" ]; then
-            cp dist/fishrouter.exe release/
-            cp config.example.json release/config.json
-            cp README.md release/
-            cd release && tar -czf ../fishrouter-${{ matrix.name }}.tar.gz *
+            cp dist/fishrouter-server.exe release/
           else
-            cp dist/fishrouter release/
-            cp config.example.json release/config.json
-            cp README.md release/
-            cd release && tar -czf ../fishrouter-${{ matrix.name }}.tar.gz *
+            cp dist/fishrouter-server release/
           fi
+          cp config.example.json release/config.json
+          cp README.md release/
+          cd release && tar -czf ../fishrouter-server-${{ matrix.name }}.tar.gz *
 
-      - name: Upload artifact
+      - name: Upload server artifact
         uses: actions/upload-artifact@v4
         with:
-          name: fishrouter-${{ matrix.name }}
-          path: fishrouter-${{ matrix.name }}.tar.gz
+          name: fishrouter-server-${{ matrix.name }}
+          path: fishrouter-server-${{ matrix.name }}.tar.gz
+
+  build-gui:
+    name: Build GUI Windows
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build server binary
+        shell: bash
+        run: |
+          pyinstaller --name fishrouter-server \
+            --onefile \
+            --add-data "static;static" \
+            --add-data "config.example.json;." \
+            --hidden-import app.main \
+            --hidden-import app.config \
+            --hidden-import app.api \
+            --hidden-import app.backends \
+            --hidden-import app.core \
+            --hidden-import app.web \
+            --hidden-import uvicorn \
+            --hidden-import fastapi \
+            --hidden-import httpx \
+            app/main.py
+
+      - name: Build GUI
+        shell: bash
+        run: |
+          pyinstaller --name FishRouter \
+            --onefile \
+            --windowed \
+            --icon=NONE \
+            app/gui.py
+
+      - name: Prepare GUI package
+        shell: bash
+        run: |
+          mkdir -p release
+          cp dist/FishRouter.exe release/
+          cp dist/fishrouter-server.exe release/
+          cp config.example.json release/config.json
+          cp README.md release/
+          cd release && tar -czf ../FishRouter-Windows-Setup.tar.gz *
+
+      - name: Upload GUI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: FishRouter-Windows-GUI
+          path: FishRouter-Windows-Setup.tar.gz
 
   release:
     name: Create Release
-    needs: build
+    needs: [build-server, build-gui]
     runs-on: ubuntu-latest
 
     steps:
@@ -99,7 +159,6 @@ jobs:
       - name: Generate version tag
         id: version
         run: |
-          # Count total commits for version number
           COMMIT_COUNT=$(git rev-list --count HEAD)
           SHORT_SHA=$(git rev-parse --short HEAD)
           VERSION="v0.$COMMIT_COUNT"
@@ -110,7 +169,6 @@ jobs:
       - name: Generate release notes
         id: notes
         run: |
-          # Get last 20 commits for release notes
           echo 'CHANGELOG<<EOF' >> $GITHUB_OUTPUT
           echo "## 📦 FishRouter $(date '+%Y-%m-%d %H:%M')" >> $GITHUB_OUTPUT
           echo "" >> $GITHUB_OUTPUT
@@ -122,10 +180,24 @@ jobs:
           git log --pretty=format:"- %s (%h)" -20 >> $GITHUB_OUTPUT
           echo "" >> $GITHUB_OUTPUT
           echo "" >> $GITHUB_OUTPUT
+          echo "### 📥 Downloads" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "#### 🖥️ Windows" >> $GITHUB_OUTPUT
+          echo "- **GUI Installer** (推荐 | Recommended): FishRouter-Windows-GUI/FishRouter-Windows-Setup.tar.gz" >> $GITHUB_OUTPUT
+          echo "- **Server Only**: fishrouter-server-windows-amd64/fishrouter-server-windows-amd64.tar.gz" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "#### 🐧 Linux" >> $GITHUB_OUTPUT
+          echo "- **一键安装 | One-click install**: \`curl -sSL https://raw.githubusercontent.com/Aobing-code/fishrouter/main/install.sh | sudo bash\`" >> $GITHUB_OUTPUT
+          echo "- **Server Binary**: fishrouter-server-linux-amd64/fishrouter-server-linux-amd64.tar.gz" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
+          echo "#### 🍎 macOS" >> $GITHUB_OUTPUT
+          echo "- **Apple Silicon**: fishrouter-server-macos-arm64/fishrouter-server-macos-arm64.tar.gz" >> $GITHUB_OUTPUT
+          echo "- **Intel**: fishrouter-server-macos-amd64/fishrouter-server-macos-amd64.tar.gz" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_OUTPUT
           echo "### 🏗️ Build Targets" >> $GITHUB_OUTPUT
           echo "" >> $GITHUB_OUTPUT
           echo "- 🐧 Linux AMD64" >> $GITHUB_OUTPUT
-          echo "- 🪟 Windows AMD64" >> $GITHUB_OUTPUT
+          echo "- 🪟 Windows AMD64 (Server + GUI)" >> $GITHUB_OUTPUT
           echo "- 🍎 macOS ARM64 (Apple Silicon)" >> $GITHUB_OUTPUT
           echo "- 🍎 macOS AMD64 (Intel)" >> $GITHUB_OUTPUT
           echo 'EOF' >> $GITHUB_OUTPUT
@@ -141,7 +213,8 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           name: "FishRouter ${{ steps.version.outputs.version }}"
           body: ${{ steps.notes.outputs.CHANGELOG }}
-          files: artifacts/**/*.tar.gz
+          files: |
+            artifacts/**/*.tar.gz
           draft: false
           prerelease: false
           make_latest: true
