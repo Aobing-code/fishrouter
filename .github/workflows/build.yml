@@ -77,7 +77,7 @@ jobs:
           path: fishrouter-server-${{ matrix.name }}.tar.gz
 
   build-windows-gui:
-    name: Build Windows GUI + MSI
+    name: Build Windows GUI + Installer
     runs-on: windows-latest
 
     steps:
@@ -144,60 +144,19 @@ jobs:
           COMMIT_COUNT=$(git rev-list --count HEAD)
           echo "version=0.$COMMIT_COUNT.0" >> $GITHUB_OUTPUT
 
-      - name: Create NSIS installer script
+      - name: Copy files for installer
         shell: bash
         run: |
-          cat > installer.nsi << 'NSISEOF'
-          !include "MUI2.nsh"
-
-          Name "FishRouter"
-          OutFile "FishRouter-Setup.exe"
-          InstallDir "$PROGRAMFILES64\FishRouter"
-          RequestExecutionLevel admin
-
-          !define MUI_ICON ""
-          !insertmacro MUI_PAGE_DIRECTORY
-          !insertmacro MUI_PAGE_INSTFILES
-          !insertmacro MUI_LANGUAGE "English"
-
-          Section "Install"
-            SetOutPath "$INSTDIR"
-            File "FishRouter.exe"
-            File "fishrouter-server.exe"
-            File "config.json"
-            File "README.md"
-
-            CreateDirectory "$SMPROGRAMS\FishRouter"
-            CreateShortCut "$SMPROGRAMS\FishRouter\FishRouter.lnk" "$INSTDIR\FishRouter.exe"
-            CreateShortCut "$DESKTOP\FishRouter.lnk" "$INSTDIR\FishRouter.exe"
-
-            WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FishRouter" "DisplayName" "FishRouter"
-            WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FishRouter" "UninstallString" "$INSTDIR\uninstall.exe"
-            WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FishRouter" "InstallLocation" "$INSTDIR"
-            WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FishRouter" "NoModify" 1
-            WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FishRouter" "NoRepair" 1
-
-            WriteUninstaller "$INSTDIR\uninstall.exe"
-          SectionEnd
-
-          Section "Uninstall"
-            Delete "$INSTDIR\*.*"
-            RMDir "$INSTDIR"
-            Delete "$SMPROGRAMS\FishRouter\FishRouter.lnk"
-            RMDir "$SMPROGRAMS\FishRouter"
-            Delete "$DESKTOP\FishRouter.lnk"
-            DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\FishRouter"
-          SectionEnd
-          NSISEOF
+          cp dist/FishRouter.exe .
+          cp dist/fishrouter-server.exe .
+          cp config.example.json config.json
+          cp README.md .
+          cp installer.nsi .
 
       - name: Build EXE Installer
         shell: cmd
         run: |
-          copy dist\FishRouter.exe FishRouter.exe
-          copy dist\fishrouter-server.exe fishrouter-server.exe
-          copy config.example.json config.json
-          copy README.md README.md
-          makensis installer.nsi
+          "C:\Program Files (x86)\NSIS\makensis.exe" installer.nsi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -205,7 +164,7 @@ jobs:
           name: FishRouter-Windows
           path: |
             FishRouter-Windows-Portable.tar.gz
-            FishRouter-Setup.msi
+            FishRouter-Setup.exe
 
   release:
     name: Create Release
@@ -235,36 +194,38 @@ jobs:
       - name: Generate release notes
         id: notes
         run: |
-          echo 'CHANGELOG<<EOF' >> $GITHUB_OUTPUT
-          echo "## 📦 FishRouter $(date '+%Y-%m-%d %H:%M')" >> $GITHUB_OUTPUT
-          echo "" >> $GITHUB_OUTPUT
-          echo "**Version:** ${{ steps.version.outputs.version }} (${{ steps.version.outputs.tag }})" >> $GITHUB_OUTPUT
-          echo "**Commits:** $(git rev-list --count HEAD) total" >> $GITHUB_OUTPUT
-          echo "" >> $GITHUB_OUTPUT
-          echo "### 📝 Latest Changes" >> $GITHUB_OUTPUT
-          echo "" >> $GITHUB_OUTPUT
-          git log --pretty=format:"- %s (%h)" -20 >> $GITHUB_OUTPUT
-          echo "" >> $GITHUB_OUTPUT
-          echo "" >> $GITHUB_OUTPUT
-          echo "### 📥 Downloads" >> $GITHUB_OUTPUT
-          echo "" >> $GITHUB_OUTPUT
-          echo "#### 🪟 Windows" >> $GITHUB_OUTPUT
-          echo "- **EXE Installer** (推荐 | Recommended): FishRouter-Setup.exe" >> $GITHUB_OUTPUT
-          echo "- **Portable** (单文件开箱即用 | No install): FishRouter-Windows-Portable.tar.gz" >> $GITHUB_OUTPUT
-          echo "" >> $GITHUB_OUTPUT
-          echo "#### 🐧 Linux" >> $GITHUB_OUTPUT
-          echo "- **一键安装 | One-click**: \`curl -sSL https://raw.githubusercontent.com/Aobing-code/fishrouter/main/install.sh | sudo bash\`" >> $GITHUB_OUTPUT
-          echo "- **Server Binary**: fishrouter-server-linux-amd64.tar.gz" >> $GITHUB_OUTPUT
-          echo "" >> $GITHUB_OUTPUT
-          echo "#### 🍎 macOS" >> $GITHUB_OUTPUT
-          echo "- **Apple Silicon**: fishrouter-server-macos-arm64.tar.gz" >> $GITHUB_OUTPUT
-          echo "" >> $GITHUB_OUTPUT
-          echo "### 🏗️ Build Targets" >> $GITHUB_OUTPUT
-          echo "" >> $GITHUB_OUTPUT
-          echo "- 🐧 Linux AMD64" >> $GITHUB_OUTPUT
-          echo "- 🪟 Windows AMD64 (EXE Installer + Portable)" >> $GITHUB_OUTPUT
-          echo "- 🍎 macOS ARM64 (Apple Silicon)" >> $GITHUB_OUTPUT
-          echo 'EOF' >> $GITHUB_OUTPUT
+          {
+            echo "CHANGELOG<<CHANGELOG_EOF"
+            echo "## 📦 FishRouter $(date '+%Y-%m-%d %H:%M')"
+            echo ""
+            echo "**Version:** ${{ steps.version.outputs.version }} (${{ steps.version.outputs.tag }})"
+            echo "**Commits:** $(git rev-list --count HEAD) total"
+            echo ""
+            echo "### 📝 Latest Changes"
+            echo ""
+            git log --pretty=format:"- %s (%h)" -20
+            echo ""
+            echo ""
+            echo "### 📥 Downloads"
+            echo ""
+            echo "#### 🪟 Windows"
+            echo "- **EXE Installer** (推荐 | Recommended): FishRouter-Setup.exe"
+            echo "- **Portable** (单文件开箱即用 | No install): FishRouter-Windows-Portable.tar.gz"
+            echo ""
+            echo "#### 🐧 Linux"
+            echo "- **一键安装 | One-click**: \`curl -sSL https://raw.githubusercontent.com/Aobing-code/fishrouter/main/install.sh | sudo bash\`"
+            echo "- **Server Binary**: fishrouter-server-linux-amd64.tar.gz"
+            echo ""
+            echo "#### 🍎 macOS"
+            echo "- **Apple Silicon**: fishrouter-server-macos-arm64.tar.gz"
+            echo ""
+            echo "### 🏗️ Build Targets"
+            echo ""
+            echo "- 🐧 Linux AMD64"
+            echo "- 🪟 Windows AMD64 (EXE Installer + Portable)"
+            echo "- 🍎 macOS ARM64 (Apple Silicon)"
+            echo "CHANGELOG_EOF"
+          } >> $GITHUB_OUTPUT
 
       - name: Delete existing tag if exists
         run: |
