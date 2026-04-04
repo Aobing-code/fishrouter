@@ -171,6 +171,42 @@ async def health():
     return {"status": "ok", "service": "fishrouter"}
 
 
+@app.get("/healthz")
+async def healthz():
+    """深度健康检查"""
+    unhealthy = []
+    for name, backend in backends.items():
+        if not backend.status.healthy:
+            unhealthy.append(name)
+    if unhealthy:
+        return JSONResponse(
+            status_code=503,
+            content={"status": "unhealthy", "backends": unhealthy}
+        )
+    return {"status": "ok"}
+
+
+@app.get("/metrics")
+async def metrics():
+    """Prometheus 格式指标"""
+    summary = stats.get_summary()
+    lines = []
+
+    success = summary["total_requests"] - summary["total_errors"]
+    lines.append(f'fishrouter_requests_total{{status="success"}} {success}')
+    lines.append(f'fishrouter_requests_total{{status="error"}} {summary["total_errors"]}')
+    lines.append(f'fishrouter_tokens_total {summary["total_tokens"]}')
+    lines.append(f'fishrouter_qps_current {summary["qps"]}')
+
+    for backend, count in summary["backend_stats"].items():
+        lines.append(f'fishrouter_backend_requests_total{{backend="{backend}"}} {count}')
+
+    for model, count in summary["model_stats"].items():
+        lines.append(f'fishrouter_model_requests_total{{model="{model}"}} {count}')
+
+    return "\n".join(lines) + "\n"
+
+
 # 根端点
 @app.get("/v1")
 async def api_root():
