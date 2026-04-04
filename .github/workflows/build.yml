@@ -153,10 +153,9 @@ jobs:
       - name: Copy files for installer
         shell: bash
         run: |
-          cp dist/FishRouter.exe .
-          cp dist/fishrouter-server.exe .
-          cp config.example.json config.json
-          cp icon.ico .
+          cp -f dist/FishRouter.exe .
+          cp -f dist/fishrouter-server.exe .
+          cp -f config.example.json config.json
 
       - name: Build EXE Installer
         shell: cmd
