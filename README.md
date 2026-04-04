@@ -12,6 +12,8 @@
 
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://hub.docker.com)
 [![Python](https://img.shields.io/badge/Python-3.11+-green)](https://python.org)
+[![Go Report](https://goreportcard.com/badge/github.com/Aobing-code/fishrouter?style=flat-square)](https://goreportcard.com/report/github.com/Aobing-code/fishrouter)
+[![Stars](https://img.shields.io/github/stars/Aobing-code/fishrouter?style=flat-square)](https://github.com/Aobing-code/fishrouter/stargazers)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
 </div>
@@ -109,6 +111,10 @@ docker run -d -p 8080:8080 \
 pip install -r requirements.txt
 python -m app.main
 ```
+
+### 配置验证 | Config Validation
+
+运行 `python scripts/configtest.py` 检查 `config.json` 语法和后端连通性。
 
 访问 `http://localhost:8080` 查看监控面板。
 
