@@ -122,12 +122,16 @@ jobs:
       - name: Build GUI
         shell: bash
         run: |
+          # Find PySide6 plugins path dynamically
+          PYTHONPATH=$(python -c "import PySide6; import os; print(os.path.dirname(PySide6.__file__))")
+          PLUGINS_PATH="$PYTHONPATH/plugins"
+          echo "Using PySide6 plugins from: $PLUGINS_PATH"
           pyinstaller --name FishRouter \
             --onefile \
             --windowed \
             --debug=all \
             --icon=icon.ico \
-            --add-data "PySide6\plugins;PySide6\\plugins" \
+            --add-data "$PLUGINS_PATH;PySide6\\plugins" \
             app/gui.py
 
       - name: Prepare portable package
