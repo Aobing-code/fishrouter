@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FishRouter - AI模型路由平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+        
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: rgba(30, 41, 59, 0.4);
+            --accent: #38bdf8;
+            --accent-gradient: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: rgba(71, 85, 105, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* 动态渐变背景 */
+        .gradient-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 80%, rgba(56, 189, 248, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(129, 140, 248, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(56, 189, 248, 0.04) 0%, transparent 40%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* 玻璃拟态卡片 */
+        .glass-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* 动态网格背景 */
+        .grid-bg {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: 
+                linear-gradient(rgba(71, 85, 105, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(71, 85, 105, 0.03) 1px, transparent 1px);
+            background-size: 24px 24px;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* 标签页 */
+        .tab {
+            padding: 10px 20px;
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .tab.active {
+            background: var(--accent-gradient);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.3);
+        }
+
+        .tab:hover:not(.active) {
+            border-color: var(--accent);
+            color: var(--text-primary);
+        }
+
+        /* 指标卡片 */
+        .metric-card {
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.15);
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* 状态徽章 */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-healthy {
+            background: rgba(34, 197, 94, 0.15);
+            color: #86efac;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .badge-unhealthy {
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        /* 延迟条 */
+        .latency-bar {
+            width: 100px;
+            height: 6px;
+            background: rgba(71, 85, 105, 0.3);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .latency-fill {
+            height: 100%;
+            background: var(--accent-gradient);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        /* 按钮 */
+        .btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--accent-gradient);
+            color: white;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.25);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(56, 189, 248, 0.4);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.25);
+        }
+
+        /* 表格 */
+        .table-container {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: rgba(71, 85, 105, 0.2);
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 14px 16px;
+            border-top: 1px solid var(--border);
+            color: var(--text-primary);
+        }
+
+        tr:hover {
+            background: rgba(56, 189, 248, 0.04);
+        }
+
+        /* 表单 */
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.1);
+        }
+
+        /* 模态框 */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal {
+            transform: scale(1);
+        }
+
+        /* 动画 */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .slide-in-left {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+    </style>
+</head>
+<body>
+    <div class="gradient-bg"></div>
+    <div class="grid-bg"></div>
+
+    <div class="container mx-auto px-6 py-8 max-w-7xl">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-10 fade-in">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-2xl font-bold shadow-lg">F</div>
+                <div>
+                    <h1 class="text-2xl font-bold bg-gradient-to-r from-sky-400 to-indigo-500 bg-clip-text text-transparent">FishRouter</h1>
+                    <p class="text-sm text-gray-400">AI模型智能路由平台</p>
+                </div>
+            </div>
+            <nav class="flex gap-3">
+                <button class="tab active" onclick="switchPage('monitor')">监控</button>
+                <button class="tab" onclick="switchPage('config')">配置</button>
+                <button class="tab" onclick="switchPage('fallback')">回退顺序</button>
+            </nav>
+        </header>
+
+        <!-- 监控页面 -->
+        <div id="page-monitor" class="page active">
+            <!-- 指标卡片 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                <div class="glass-card metric-card fade-in" style="animation-delay: 0.05s">
+                    <div class="text-sm text-gray-400 mb-2">总请求数</div>
+                    <div class="metric-value" id="total-requests">0</div>
+                </div>
+                <div class="glass-card metric-card fade-in" style="animation-delay: 0.1s">
+                    <div class="text-sm text-gray-400 mb-2">QPS</div>
+                    <div class="metric-value text-sky-400" id="qps">0</div>
+                </div>
+                <div class="glass-card metric-card fade-in" style="animation-delay: 0.15s">
+                    <div class="text-sm text-gray-400 mb-2">总Token数</div>
+                    <div class="metric-value text-purple-400" id="total-tokens">0</div>
+                </div>
+                <div class="glass-card metric-card fade-in" style="animation-delay: 0.2s">
+                    <div class="text-sm text-gray-400 mb-2">错误数</div>
+                    <div class="metric-value text-red-400" id="total-errors">0</div>
+                </div>
+            </div>
+
+            <!-- 后端状态 -->
+            <div class="section-title">
+                <h2 class="text-lg font-semibold">后端状态</h2>
+                <button class="btn btn-primary" onclick="refreshBackends()">刷新</button>
+            </div>
+            <div class="glass-card mb-10 fade-in" style="animation-delay: 0.25s">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>名称</th>
+                                <th>类型</th>
+                                <th>状态</th>
+                                <th>延迟</th>
+                                <th>请求数</th>
+                                <th>模型</th>
+                            </tr>
+                        </thead>
+                        <tbody id="backends-body">
+                            <tr><td colspan="6" class="text-center py-8 text-gray-400">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 请求趋势 -->
+            <div class="section-title">
+                <h2 class="text-lg font-semibold">请求趋势</h2>
+            </div>
+            <div class="glass-card mb-10 fade-in" style="animation-delay: 0.3s">
+                <div class="p-6">
+                    <canvas id="timeline-chart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 配置页面 -->
+        <div id="page-config" class="page">
+            <div class="section-title">
+                <h2 class="text-lg font-semibold">后端管理</h2>
+                <button class="btn btn-primary" onclick="showModal('backend')">添加后端</button>
+            </div>
+            <div class="glass-card fade-in">
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>名称</th>
+                                <th>类型</th>
+                                <th>优先级</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="config-backends-body">
+                            <tr><td colspan="4" class="text-center py-8 text-gray-400">加载中...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 回退顺序页面 -->
+        <div id="page-fallback" class="page">
+            <div class="section-title">
+                <h2 class="text-lg font-semibold">回退顺序</h2>
+                <button class="btn btn-primary" onclick="showModal('fallback')">添加模型</button>
+            </div>
+            <div class="glass-card fade-in">
+                <div class="p-6">
+                    <ul id="fallback-list" class="sortable-list">
+                        <!-- 拖拽排序列表 -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加后端模态框 -->
+    <div id="modal-backend" class="modal-overlay">
+        <div class="modal p-8">
+            <h3 class="text-xl font-bold mb-6">添加后端</h3>
+            <form id="backend-form" onsubmit="submitBackend(event)">
+                <div class="form-group">
+                    <label>名称</label>
+                    <input type="text" class="form-control" name="name" required placeholder="例如: OpenAI">
+                </div>
+                <div class="form-group">
+                    <label>类型</label>
+                    <select class="form-control" name="type" required>
+                        <option value="openai">OpenAI</option>
+                        <option value="anthropic">Anthropic</option>
+                        <option value="ollama">Ollama</option>
+                        <option value="custom">Custom</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>API URL</label>
+                    <input type="url" class="form-control" name="url" required placeholder="https://api.openai.com/v1">
+                </div>
+                <div class="form-group">
+                    <label>API Key</label>
+                    <input type="password" class="form-control" name="api_key" required>
+                </div>
+                <div class="form-group">
+                    <label>模型</label>
+                    <input type="text" class="form-control" name="model" required placeholder="gpt-4-turbo">
+                </div>
+                <div class="flex justify-end gap-3 mt-8">
+                    <button type="button" class="btn" onclick="closeModal('backend')">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 动画
+        document.addEventListener('DOMContentLoaded', () => {
+            gsap.from('.fade-in', {
+                opacity: 0,
+                y: 20,
+                duration: 0.6,
+                stagger: 0.05,
+                ease: "power2.out"
+            });
+        });
+
+        // 页面切换
+        function switchPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            
+            document.getElementById(`page-${pageId}`).classList.add('active');
+            event.target.classList.add('active');
+            
+            // 重新触发动画
+            gsap.from(`#page-${pageId} .fade-in`, {
+                opacity: 0,
+                y: 10,
+                duration: 0.4,
+                stagger: 0.02,
+                ease: "power2.out"
+            });
+        }
+
+        // 模态框
+        function showModal(type) {
+            document.getElementById(`modal-${type}`).classList.add('active');
+        }
+
+        function closeModal(type) {
+            document.getElementById(`modal-${type}`).classList.remove('active');
+        }
+
+        // 数据加载
+        async function loadBackends() {
+            try {
+                const res = await fetch('/api/backends');
+                const data = await res.json();
+                renderBackends(data);
+            } catch (e) {
+                console.error('Failed to load backends:', e);
+            }
+        }
+
+        function renderBackends(backends) {
+            const tbody = document.getElementById('backends-body');
+            if (!backends.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-gray-400">暂无后端</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = backends.map(b => `
+                <tr>
+                    <td class="font-medium">${b.name}</td>
+                    <td>${b.type}</td>
+                    <td>
+                        <span class="badge ${b.healthy ? 'badge-healthy' : 'badge-unhealthy'}">
+                            ${b.healthy ? '正常' : '异常'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="latency-bar">
+                            <div class="latency-fill" style="width: ${Math.min(100, b.latency * 10)}%"></div>
+                        </div>
+                        <span class="text-xs text-gray-400 ml-2">${b.latency}ms</span>
+                    </td>
+                    <td>${b.requests}</td>
+                    <td class="text-sm text-gray-400">${b.model}</td>
+                </tr>
+            `).join('');
+        }
+
+        function refreshBackends() {
+            loadBackends();
+        }
+
+        // 初始化
+        loadBackends();
+        setInterval(loadBackends, 5000);
+    </script>
+</body>
+</html>

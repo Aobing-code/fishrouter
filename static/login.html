@@ -4,121 +4,251 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FishRouter - 登录</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --bg-primary: #0a0a0f;
+            --accent: #38bdf8;
+            --accent-gradient: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-primary);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
+            margin: 0;
         }
+
+        /* 动态背景 */
+        .gradient-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(60px);
+            opacity: 0.4;
+            animation: float 8s ease-in-out infinite;
+        }
+
+        .orb-1 {
+            width: 300px; height: 300px;
+            background: #38bdf8;
+            top: 10%; left: 20%;
+            animation-delay: 0s;
+        }
+
+        .orb-2 {
+            width: 250px; height: 250px;
+            background: #818cf8;
+            bottom: 20%; right: 15%;
+            animation-delay: -4s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+
+        /* 玻璃拟态卡片 */
+        .glass-card {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(71, 85, 105, 0.3);
+            border-radius: 24px;
+            box-shadow: 
+                0 1px 3px rgba(0,0,0,0.1),
+                0 20px 40px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 10;
+        }
+
         .login-container {
-            background: #1e293b;
-            border-radius: 16px;
-            padding: 40px;
-            width: 100%;
-            max-width: 400px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 90%;
+            max-width: 420px;
+            padding: 48px;
+            opacity: 0;
+            transform: translateY(30px);
         }
+
         .logo {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
         }
-        .logo h1 {
-            color: #38bdf8;
+
+        .logo-icon {
+            width: 64px; height: 64px;
+            margin: 0 auto 20px;
+            background: var(--accent-gradient);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 32px;
-            font-weight: bold;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 12px 24px rgba(56, 189, 248, 0.3);
         }
+
+        .logo h1 {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(to right, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
         .logo p {
-            color: #94a3b8;
+            color: #64748b;
             font-size: 14px;
-            margin-top: 8px;
         }
+
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
+
         .form-group label {
             display: block;
             color: #94a3b8;
-            font-size: 14px;
+            font-size: 13px;
+            font-weight: 500;
             margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
+
         .form-group input {
             width: 100%;
-            padding: 12px 16px;
-            background: #0f172a;
-            border: 2px solid #334155;
-            border-radius: 8px;
-            color: #e2e8f0;
+            padding: 14px 18px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 2px solid rgba(71, 85, 105, 0.3);
+            border-radius: 12px;
+            color: #f8fafc;
             font-size: 16px;
-            transition: border-color 0.2s;
+            transition: all 0.2s ease;
         }
+
         .form-group input:focus {
             outline: none;
-            border-color: #38bdf8;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.1);
         }
+
         .form-group input::placeholder {
-            color: #64748b;
+            color: #475569;
         }
+
         .login-btn {
             width: 100%;
             padding: 14px;
-            background: #38bdf8;
-            color: #0f172a;
+            background: var(--accent-gradient);
+            color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.2s ease;
+            margin-top: 8px;
         }
+
         .login-btn:hover {
-            background: #7dd3fc;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(56, 189, 248, 0.4);
         }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
         .login-btn:disabled {
-            background: #475569;
+            opacity: 0.6;
             cursor: not-allowed;
+            transform: none;
         }
+
         .error-msg {
             color: #f87171;
             font-size: 14px;
             text-align: center;
             margin-top: 16px;
+            padding: 10px;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 8px;
             display: none;
         }
+
         .hint {
-            color: #64748b;
+            color: #475569;
             font-size: 12px;
             text-align: center;
-            margin-top: 20px;
+            margin-top: 24px;
+        }
+
+        .version {
+            position: absolute;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #475569;
+            font-size: 12px;
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
+    <!-- 动态背景光晕 -->
+    <div class="gradient-orb orb-1"></div>
+    <div class="gradient-orb orb-2"></div>
+
+    <!-- 登录卡片 -->
+    <div class="glass-card login-container" id="login-card">
         <div class="logo">
+            <div class="logo-icon">F</div>
             <h1>FishRouter</h1>
-            <p>AI模型路由平台</p>
+            <p>AI模型智能路由平台</p>
         </div>
+
         <form id="login-form">
             <div class="form-group">
-                <label>密码</label>
-                <input type="password" id="password" placeholder="请输入管理员密码" autofocus>
+                <label>管理员密码</label>
+                <input type="password" id="password" placeholder="请输入访问密码" autofocus autocomplete="current-password">
             </div>
-            <button type="submit" class="login-btn" id="login-btn">登录</button>
+            <button type="submit" class="login-btn" id="login-btn">
+                <span id="btn-text">登录</span>
+            </button>
             <div class="error-msg" id="error-msg"></div>
         </form>
-        <div class="hint">默认密码: sk-openfish</div>
+
+        <div class="hint">默认密码: <code class="bg-slate-700 px-2 py-1 rounded">sk-openfish</code></div>
     </div>
 
+    <div class="version">v0.68</div>
+
     <script>
+        // 入场动画
+        gsap.to('#login-card', {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            delay: 0.2,
+            ease: "power2.out"
+        });
+
+        // 登录逻辑
         document.getElementById('login-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
-            const password = document.getElementById('password').value;
+            const password = document.getElementById('password').value.trim();
             const btn = document.getElementById('login-btn');
+            const btnText = document.getElementById('btn-text');
             const errorMsg = document.getElementById('error-msg');
             
             if (!password) {
@@ -128,7 +258,7 @@
             }
             
             btn.disabled = true;
-            btn.textContent = '登录中...';
+            btnText.textContent = '登录中...';
             errorMsg.style.display = 'none';
             
             try {
@@ -141,18 +271,24 @@
                 const data = await res.json();
                 
                 if (res.ok) {
-                    // 登录成功，跳转到首页
+                    // 登录成功，跳转
                     window.location.href = '/';
                 } else {
-                    errorMsg.textContent = data.detail || '登录失败';
+                    errorMsg.textContent = data.detail || '密码错误，请重试';
                     errorMsg.style.display = 'block';
+                    // 错误震动反馈
+                    gsap.to('#login-card', {
+                        x: [0, -10, 10, -5, 5, 0],
+                        duration: 0.4,
+                        ease: "power2.out"
+                    });
                 }
             } catch (e) {
-                errorMsg.textContent = '网络错误: ' + e.message;
+                errorMsg.textContent = '网络连接失败: ' + e.message;
                 errorMsg.style.display = 'block';
             } finally {
                 btn.disabled = false;
-                btn.textContent = '登录';
+                btnText.textContent = '登录';
             }
         });
 
@@ -161,6 +297,16 @@
             if (e.key === 'Enter') {
                 document.getElementById('login-form').dispatchEvent(new Event('submit'));
             }
+        });
+
+        // 输入框聚焦动画
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('focus', () => {
+                gsap.to(input, { scale: 1.02, duration: 0.2 });
+            });
+            input.addEventListener('blur', () => {
+                gsap.to(input, { scale: 1, duration: 0.2 });
+            });
         });
     </script>
 </body>

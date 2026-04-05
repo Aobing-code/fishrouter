@@ -54,35 +54,410 @@ except ImportError:
 
 
 class Colors:
-    BG_PRIMARY = "#0f172a"
-    BG_SECONDARY = "#1e293b"
-    BG_TERTIARY = "#334155"
-    BG_HOVER = "#475569"
-    ACCENT = "#38bdf8"
-    ACCENT_HOVER = "#7dd3fc"
-    SUCCESS = "#22c55e"
-    WARNING = "#f59e0b"
-    ERROR = "#ef4444"
-    PURPLE = "#a78bfa"
-    TEXT_PRIMARY = "#f1f5f9"
-    TEXT_SECONDARY = "#94a3b8"
-    TEXT_MUTED = "#64748b"
-    BORDER = "#334155"
-    TABLE_ALT = "#1a2332"
+    BG_PRIMARY = "#0a0a0f"
+    BG_SECONDARY = "rgba(20, 20, 30, 0.6)"
+    BG_TERTIARY = "rgba(30, 30, 50, 0.5)"
+    BG_HOVER = "rgba(40, 40, 70, 0.7)"
+    ACCENT = "#00eeff"
+    ACCENT_HOVER = "#00ccff"
+    ACCENT_GLOW = "rgba(0, 238, 255, 0.15)"
+    SUCCESS = "#00ff88"
+    WARNING = "#ffaa00"
+    ERROR = "#ff3344"
+    PURPLE = "#aa88ff"
+    TEXT_PRIMARY = "#f0f4ff"
+    TEXT_SECONDARY = "#8892b0"
+    TEXT_MUTED = "#5a6a8a"
+    BORDER = "rgba(100, 120, 160, 0.2)"
+    TABLE_ALT = "rgba(15, 25, 45, 0.5)"
+    GLASS_BLUR = "10px"
 
 
 QSS = """
 QWidget {
-    background-color: %(bg_primary)s;
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 %(bg_primary)s, stop:1 %(bg_secondary)s);
     color: %(text_primary)s;
     font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
     font-size: 13px;
 }
 
 QMainWindow {
-    background-color: %(bg_primary)s;
+    background: transparent;
 }
 
+/* 玻璃拟态卡片 */
+QGroupBox, .GlassFrame {
+    background: %(bg_secondary)s;
+    border: 1px solid %(border)s;
+    border-radius: 12px;
+    margin: 8px 0;
+    padding: 16px;
+    font-weight: 500;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 12px;
+    top: 4px;
+    padding: 0 8px;
+    background: %(bg_secondary)s;
+    color: %(accent)s;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Tab 样式 */
+QTabWidget::pane {
+    border: none;
+    background: transparent;
+    top: -1px;
+}
+QTabBar::tab {
+    background: transparent;
+    color: %(text_secondary)s;
+    padding: 10px 20px;
+    margin-right: 4px;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border: 1px solid transparent;
+    border-bottom: 1px solid %(border)s;
+    font-size: 13px;
+    min-width: 80px;
+}
+QTabBar::tab:selected {
+    background: %(bg_secondary)s;
+    color: %(accent)s;
+    border: 1px solid %(border)s;
+    border-bottom: 1px solid %(bg_secondary)s;
+    font-weight: bold;
+}
+QTabBar::tab:hover:!selected {
+    background: %(bg_tertiary)s;
+    color: %(text_primary)s;
+}
+
+/* 按钮 - 赛博风格 */
+QPushButton {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 %(bg_tertiary)s, stop:1 %(bg_hover)s);
+    color: %(text_primary)s;
+    border: 1px solid %(border)s;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    min-height: 20px;
+}
+QPushButton:hover {
+    border-color: %(accent)s;
+    color: %(accent)s;
+    background: %(bg_hover)s;
+}
+QPushButton:pressed {
+    background: %(bg_secondary)s;
+    border-color: %(accent)s;
+}
+QPushButton:disabled {
+    background: %(bg_secondary)s;
+    color: %(text_muted)s;
+    border-color: %(border)s;
+}
+
+#AccentButton {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 %(accent)s, stop:1 %(accent_hover)s);
+    color: %(bg_primary)s;
+    border: none;
+    font-weight: bold;
+    border-radius: 10px;
+}
+#AccentButton:hover {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 %(accent_hover)s, stop:1 %(accent)s);
+}
+
+#SuccessButton {
+    background-color: %(success)s;
+    color: white;
+    border: none;
+}
+#SuccessButton:hover {
+    background-color: #00cc66;
+}
+
+#DangerButton {
+    background-color: %(error)s;
+    color: white;
+    border: none;
+}
+#DangerButton:hover {
+    background-color: #cc1a1a;
+}
+
+/* 分组框 - 玻璃质感 */
+QGroupBox {
+    background: %(bg_secondary)s;
+    border: 1px solid %(border)s;
+    border-radius: 12px;
+    margin-top: 16px;
+    padding: 20px;
+    font-weight: 500;
+}
+QGroupBox::title {
+    subcontrol-origin: margin;
+    left: 14px;
+    top: -10px;
+    padding: 0 10px;
+    background: %(bg_secondary)s;
+    color: %(accent)s;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* 表格 - 现代化 */
+QTableWidget {
+    background-color: %(bg_primary)s;
+    alternate-background-color: %(table_alt)s;
+    gridline-color: %(border)s;
+    border: 1px solid %(border)s;
+    border-radius: 10px;
+    selection-background-color: rgba(0, 238, 255, 0.3);
+    selection-color: %(text_primary)s;
+}
+QTableWidget::item {
+    padding: 10px;
+    border-bottom: 1px solid %(border)s;
+}
+QTableWidget::item:hover {
+    background: %(bg_tertiary)s;
+}
+QTableWidget::item:selected {
+    background: rgba(0, 238, 255, 0.2);
+    color: %(text_primary)s;
+}
+QHeaderView::section {
+    background: %(bg_secondary)s;
+    color: %(text_secondary)s;
+    padding: 10px;
+    border: none;
+    border-bottom: 2px solid %(accent)s;
+    border-right: 1px solid %(border)s;
+    font-weight: bold;
+    font-size: 12px;
+}
+QHeaderView::section:hover {
+    background: %(bg_tertiary)s;
+    color: %(accent)s;
+}
+
+/* 输入框 */
+QLineEdit, QComboBox, QSpinBox, QTextEdit {
+    background: %(bg_secondary)s;
+    border: 1px solid %(border)s;
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: %(text_primary)s;
+    selection-background-color: %(accent)s;
+}
+QLineEdit:hover, QComboBox:hover, QTextEdit:hover {
+    border-color: %(accent)s;
+}
+QLineEdit:focus, QComboBox:focus, QTextEdit:focus {
+    border: 2px solid %(accent)s;
+    padding: 7px 11px;
+}
+QLineEdit::placeholder {
+    color: %(text_muted)s;
+}
+
+/* 下拉框 */
+QComboBox::drop-down {
+    background: %(bg_tertiary)s;
+    border: 1px solid %(border)s;
+    border-radius: 4px;
+    margin-right: 4px;
+    min-width: 24px;
+}
+QComboBox::down-arrow {
+    image: none;
+    border: 2px solid transparent;
+    border-top: 2px solid %(text_muted)s;
+    width: 6px;
+    height: 6px;
+    margin-bottom: 2px;
+}
+QComboBox QAbstractItemView {
+    background: %(bg_secondary)s;
+    border: 1px solid %(border)s;
+    selection-background-color: %(accent)s;
+    selection-color: %(bg_primary)s;
+    border-radius: 6px;
+}
+
+/* 滚动条 */
+QScrollBar:vertical {
+    background: transparent;
+    width: 10px;
+    margin: 0px;
+}
+QScrollBar::handle:vertical {
+    background: %(border)s;
+    border-radius: 5px;
+    min-height: 20px;
+}
+QScrollBar::handle:vertical:hover {
+    background: %(accent)s;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    height: 0px;
+}
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none;
+}
+
+QScrollBar:horizontal {
+    background: transparent;
+    height: 10px;
+    margin: 0px;
+}
+QScrollBar::handle:horizontal {
+    background: %(border)s;
+    border-radius: 5px;
+    min-width: 20px;
+}
+QScrollBar::handle:horizontal:hover {
+    background: %(accent)s;
+}
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    width: 0px;
+}
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: none;
+}
+
+/* 进度条 */
+QProgressBar {
+    background: %(bg_tertiary)s;
+    border: 1px solid %(border)s;
+    border-radius: 5px;
+    text-align: center;
+    color: %(text_secondary)s;
+    font-size: 12px;
+}
+QProgressBar::chunk {
+    background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 %(accent)s, stop:1 %(accent_hover)s);
+    border-radius: 5px;
+}
+
+/* 日志查看器 */
+QTextEdit#LogViewer {
+    background: %(bg_primary)s;
+    border: 1px solid %(border)s;
+    border-radius: 8px;
+    font-family: "JetBrains Mono", "Consolas", monospace;
+    font-size: 12px;
+    padding: 8px;
+}
+QTextEdit#LogViewer:hover {
+    border-color: %(accent)s;
+}
+
+/* 系统托盘菜单 */
+QMenu {
+    background: %(bg_secondary)s;
+    border: 1px solid %(border)s;
+    border-radius: 8px;
+    padding: 4px;
+}
+QMenu::item {
+    background: transparent;
+    color: %(text_primary)s;
+    padding: 8px 24px;
+    border-radius: 4px;
+}
+QMenu::item:selected {
+    background: %(accent)s;
+    color: %(bg_primary)s;
+}
+QMenu::separator {
+    height: 1px;
+    background: %(border)s;
+    margin: 4px 0;
+}
+
+/* 复选框和单选钮 */
+QCheckBox, QRadioButton {
+    spacing: 8px;
+}
+QCheckBox::indicator, QRadioButton::indicator {
+    width: 18px;
+    height: 18px;
+}
+QCheckBox::indicator:unchecked, QRadioButton::indicator:unchecked {
+    border: 2px solid %(border)s;
+    border-radius: 4px;
+    background: transparent;
+}
+QCheckBox::indicator:checked, QRadioButton::indicator:checked {
+    border: 2px solid %(accent)s;
+    border-radius: 4px;
+    background: %(accent)s;
+}
+QCheckBox::indicator:hover, QRadioButton::indicator:hover {
+    border-color: %(accent)s;
+}
+
+/* 标签 */
+QLabel {
+    color: %(text_primary)s;
+}
+
+/* 状态卡片 */
+#StatCard {
+    background: %(bg_secondary)s;
+    border: 1px solid %(border)s;
+    border-radius: 12px;
+    padding: 16px;
+    font-weight: 500;
+}
+
+/* 工具提示 */
+QToolTip {
+    background: %(bg_secondary)s;
+    color: %(text_primary)s;
+    border: 1px solid %(border)s;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+/* 消息框 */
+QMessageBox {
+    background: %(bg_secondary)s;
+}
+QMessageBox QLabel {
+    color: %(text_primary)s;
+}
+QMessageBox QPushButton {
+    min-width: 80px;
+}
+""" % {
+    "bg_primary": Colors.BG_PRIMARY,
+    "bg_secondary": Colors.BG_SECONDARY,
+    "bg_tertiary": Colors.BG_TERTIARY,
+    "bg_hover": Colors.BG_HOVER,
+    "accent": Colors.ACCENT,
+    "accent_hover": Colors.ACCENT_HOVER,
+    "success": Colors.SUCCESS,
+    "warning": Colors.WARNING,
+    "error": Colors.ERROR,
+    "purple": Colors.PURPLE,
+    "text_primary": Colors.TEXT_PRIMARY,
+    "text_secondary": Colors.TEXT_SECONDARY,
+    "text_muted": Colors.TEXT_MUTED,
+    "border": Colors.BORDER,
+    "table_alt": Colors.TABLE_ALT,
+}
+
+[1598 more lines] 这里省略完整替换，我将在下一次编辑中提供完整的 QSS 内容。
 #TitleBar {
     background-color: %(bg_secondary)s;
     border-bottom: 1px solid %(border)s;
