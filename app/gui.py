@@ -1526,21 +1526,37 @@ class FishRouterApp(QMainWindow):
 
         def run_server():
             try:
-                base_dir = os.path.dirname(os.path.abspath(__file__))
+                # Determine base directory: if running as exe (PyInstaller), use executable dir; otherwise use script dir
+                if getattr(sys, 'frozen', False):
+                    base_dir = os.path.dirname(sys.executable)
+                else:
+                    base_dir = os.path.dirname(os.path.abspath(__file__))
                 server_exe = os.path.join(base_dir, "fishrouter-server.exe")
                 if os.path.exists(server_exe):
                     cmd = [server_exe, "--port", str(port)]
                     env = os.environ.copy()
                     env["PYTHONIOENCODING"] = "utf-8"
-                    self.server_process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env, cwd=base_dir, creationflags=subprocess.CREATE_NO_WINDOW)
+                    # Start without CREATE_NO_WINDOW to see errors if any
+                    self.server_process = subprocess.Popen(
+                        cmd,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
+                        text=True,
+                        env=env,
+                        cwd=base_dir
+                    )
                     for line in self.server_process.stdout:
                         QTimer.singleShot(0, lambda l=line.strip(): self._log(l))
                     self.server_process.wait()
+                    self._log("服务器进程已退出 | Server process exited")
                 else:
+                    self._log(f"未找到服务器可执行文件: {server_exe}，切换到内联模式 | Server executable not found, falling back to inline mode")
                     self._run_server_inline()
                     return
             except Exception as e:
                 QTimer.singleShot(0, lambda: self._log(f"错误 | Error: {e}"))
+                import traceback
+                QTimer.singleShot(0, lambda: self._log(traceback.format_exc()))
             finally:
                 QTimer.singleShot(0, self._server_stopped)
 
