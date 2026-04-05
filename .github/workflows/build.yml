@@ -99,9 +99,14 @@ jobs:
           node-version: '20'
 
       - name: Build frontend
+        shell: bash
         run: |
           cd frontend
-          npm ci
+          if [ ! -f package-lock.json ]; then
+            npm install
+          else
+            npm ci
+          fi
           npm run build
           cd ..
 
