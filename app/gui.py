@@ -1035,7 +1035,8 @@ class FishRouterApp(QMainWindow):
         super().__init__()
         self.server_process = None
         self.server_running = False
-        self.config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+        # Read config from project root (parent of app/ directory)
+        self.config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config.json")
         self.config = {}
         self.stats_data = {"total_requests": 0, "total_tokens": 0, "total_errors": 0, "qps": 0}
         self.backend_statuses = []
