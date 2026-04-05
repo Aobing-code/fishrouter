@@ -233,15 +233,19 @@ async def update_backend(name: str, body: BackendCreate):
 @router.delete("/api/config/backends/{name}")
 async def delete_backend(name: str):
     """删除后端"""
-    app = get_app()
-    config = app.config
-
-    backends = config._config.get("backends", [])
-    config._config["backends"] = [b for b in backends if b["name"] != name]
-    config.save()
-    config.load()
-    await app.init_backends()
-    return {"status": "ok"}
+    try:
+        app = get_app()
+        config = app.config
+        
+        backends = config._config.get("backends", [])
+        config._config["backends"] = [b for b in backends if b.get("name") != name]
+        config.save()
+        config.load()
+        await app.init_backends()
+        return {"status": "ok"}
+    except Exception as e:
+        logger.error(f"Failed to delete backend {name}: {e}")
+        raise HTTPException(status_code=500, detail=f"删除失败: {str(e)}")
 
 
 @router.put("/api/config/backends/{name}/toggle")

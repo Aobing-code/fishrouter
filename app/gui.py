@@ -38,7 +38,7 @@ except ImportError:
             QGroupBox, QFormLayout, QFrame, QSystemTrayIcon, QMenu,
             QMessageBox, QFileDialog, QCheckBox, QSplitter, QDialog,
             QGridLayout, QListWidget, QListWidgetItem, QAbstractItemView,
-            QSizePolicy
+            QSizePolicy, QInputDialog
         )
         from PyQt5.QtCore import (
             Qt, QPropertyAnimation, QEasingCurve, QTimer, pyqtSignal as Signal, QThread,
