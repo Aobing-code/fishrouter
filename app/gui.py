@@ -1543,7 +1543,8 @@ class FishRouterApp(QMainWindow):
                         stderr=subprocess.STDOUT,
                         text=True,
                         env=env,
-                        cwd=base_dir
+                        cwd=base_dir,
+                        creationflags=subprocess.CREATE_NO_WINDOW
                     )
                     for line in self.server_process.stdout:
                         QTimer.singleShot(0, lambda l=line.strip(): self._log(l))
