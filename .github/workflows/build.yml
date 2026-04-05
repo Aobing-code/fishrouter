@@ -86,7 +86,6 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install -r requirements-gui.txt
           pip install pyinstaller
 
       - name: Build server binary
@@ -94,10 +93,22 @@ jobs:
         run: |
           pyinstaller server.spec
 
-      - name: Build GUI
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+          cd ..
+
+      - name: Build launcher (WebView2)
         shell: bash
         run: |
-          pyinstaller gui.spec
+          pyinstaller launcher.spec
 
       - name: Prepare portable package
         shell: pwsh
@@ -106,6 +117,7 @@ jobs:
           Copy-Item dist/FishRouter.exe portable/
           Copy-Item dist/fishrouter-server.exe portable/
           Copy-Item config.example.json portable/config.json
+          Copy-Item static portable/ -Recurse
           Copy-Item README.md portable/
           Compress-Archive -Path portable/* -DestinationPath FishRouter-Windows-Portable.zip
 

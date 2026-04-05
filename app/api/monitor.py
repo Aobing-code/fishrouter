@@ -139,3 +139,20 @@ async def get_backend_model_detail(backend_name: str, model_id: str):
     except Exception as e:
         logger.error(f"Failed to get model detail from {backend_name}: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/restart")
+async def restart_server():
+    """重启服务器（用于启动器）"""
+    import os
+    import signal
+    import sys
+    
+    if sys.platform == 'win32':
+        # Windows: 使用 taskkill 结束当前进程树
+        os.system('taskkill /F /T /PID %d' % os.getpid())
+    else:
+        # Unix: 发送 SIGHUP 或直接 exit
+        os.kill(os.getpid(), signal.SIGHUP)
+    
+    return {"status": "restarting", "message": "Server is restarting"}
