@@ -9,6 +9,8 @@ import json
 import urllib.request
 import ssl
 
+from app.platforms import API_PLATFORMS, get_platform_names
+
 try:
     from PySide6.QtWidgets import (
         QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
@@ -17,7 +19,7 @@ try:
         QGroupBox, QFormLayout, QFrame, QSystemTrayIcon, QMenu,
         QMessageBox, QFileDialog, QCheckBox, QSplitter, QDialog,
         QGridLayout, QListWidget, QListWidgetItem, QAbstractItemView,
-        QSizePolicy
+        QSizePolicy, QInputDialog
     )
     from PySide6.QtCore import (
         Qt, QPropertyAnimation, QEasingCurve, QTimer, Signal, QThread,
@@ -524,6 +526,50 @@ class BackendEditorDialog(QDialog):
 
         b = self.backend
 
+        # Platform presets
+        preset_frame = QFrame()
+        preset_frame.setStyleSheet("background-color: #1e293b; border-radius: 8px; border: 1px solid #334155; padding: 8px;")
+        preset_layout = QVBoxLayout(preset_frame)
+        preset_layout.setContentsMargins(8, 8, 8, 8)
+
+        preset_label = QLabel("🚀 常用平台 | Common Platforms:")
+        preset_label.setStyleSheet("color: #94a3b8; font-size: 12px;")
+        preset_layout.addWidget(preset_label)
+
+        preset_scroll = QScrollArea()
+        preset_scroll.setWidgetResizable(True)
+        preset_scroll.setFixedHeight(120)
+        preset_scroll.setStyleSheet("border: none; background: transparent;")
+        preset_container = QWidget()
+        preset_grid = QGridLayout(preset_container)
+        preset_grid.setSpacing(4)
+
+        for i, platform in enumerate(API_PLATFORMS):
+            btn = AnimatedButton(f"{platform['icon']} {platform['name']}")
+            btn.setFixedHeight(28)
+            btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #334155;
+                    color: #e2e8f0;
+                    border: 1px solid #475569;
+                    border-radius: 4px;
+                    font-size: 11px;
+                    padding: 2px 6px;
+                }
+                QPushButton:hover {
+                    background-color: #475569;
+                    border-color: #38bdf8;
+                }
+            """)
+            btn.clicked.connect(lambda checked, p=platform: self._apply_platform_preset(p))
+            row = i // 3
+            col = i % 3
+            preset_grid.addWidget(btn, row, col)
+
+        preset_scroll.setWidget(preset_container)
+        preset_layout.addWidget(preset_scroll)
+        form.addRow("平台预设 | Platform Presets", preset_frame)
+
         self.name_entry = QLineEdit(b.get("name", ""))
         form.addRow("名称 | Name", self.name_entry)
 
@@ -532,8 +578,17 @@ class BackendEditorDialog(QDialog):
         self.type_combo.setCurrentText(b.get("type", "openai"))
         form.addRow("类型 | Type", self.type_combo)
 
+        # URL with fetch models button
+        url_layout = QHBoxLayout()
         self.url_entry = QLineEdit(b.get("url", ""))
-        form.addRow("地址 | URL", self.url_entry)
+        url_layout.addWidget(self.url_entry)
+
+        self.fetch_models_btn = AnimatedButton("📡 获取模型 | Fetch Models")
+        self.fetch_models_btn.setObjectName("AccentButton")
+        self.fetch_models_btn.setFixedWidth(160)
+        self.fetch_models_btn.clicked.connect(self._fetch_models_from_api)
+        url_layout.addWidget(self.fetch_models_btn)
+        form.addRow("地址 | URL", url_layout)
 
         self.weight_entry = QLineEdit(str(b.get("weight", 10)))
         form.addRow("权重 | Weight", self.weight_entry)
@@ -608,6 +663,263 @@ class BackendEditorDialog(QDialog):
             model = dialog.get_model()
             self.models_list._models.append(model)
             self.models_list.addItem(f"{model['id']} -> {model['name']} ({model['context_length']} tokens)")
+
+    def _apply_platform_preset(self, platform):
+        """Apply platform preset to form fields"""
+        self.url_entry.setText(platform["url"])
+        self.type_combo.setCurrentText(platform["type"])
+        if not self.name_entry.text().strip():
+            self.name_entry.setText(platform["name"].lower().replace(" ", "-").replace("（", "").replace("）", ""))
+        self._log(f"已选择平台预设 | Applied preset: {platform['icon']} {platform['name']}")
+
+    def _log(self, msg):
+        """Show status message"""
+        if hasattr(self, 'parent') and self.parent():
+            if hasattr(self.parent(), '_log'):
+                self.parent()._log(msg)
+
+    def _fetch_models_from_api(self):
+        """Fetch models from the backend API"""
+        url = self.url_entry.text().strip()
+        api_keys = [k.strip() for k in self.api_keys_text.toPlainText().split("\n") if k.strip()]
+        backend_type = self.type_combo.currentText()
+
+        if not url:
+            QMessageBox.warning(self, "警告 | Warning", "请先填写地址 | Please enter URL first")
+            return
+
+        self.fetch_models_btn.setEnabled(False)
+        self.fetch_models_btn.setText("⏳ 获取中... | Fetching...")
+
+        def do_fetch():
+            try:
+                ctx = ssl.create_default_context()
+                ctx.check_hostname = False
+                ctx.verify_mode = ssl.CERT_NONE
+
+                headers = {}
+                if api_keys:
+                    key = api_keys[0]
+                    if backend_type in ("openai",):
+                        headers["Authorization"] = f"Bearer {key}"
+                    elif backend_type == "anthropic":
+                        headers["x-api-key"] = key
+                        headers["anthropic-version"] = "2023-06-01"
+
+                models = []
+
+                if backend_type == "openai":
+                    req = urllib.request.Request(f"{url}/models", headers=headers)
+                    with urllib.request.urlopen(req, context=ctx, timeout=15) as resp:
+                        data = json.loads(resp.read().decode())
+                        for m in data.get("data", []):
+                            models.append({
+                                "id": m.get("id", ""),
+                                "name": m.get("id", ""),
+                                "context_length": m.get("context_length", 4096),
+                                "enabled": True,
+                                "rate_limit": {"rpm": 0, "tpm": 0, "concurrent": 0}
+                            })
+
+                elif backend_type == "anthropic":
+                    req = urllib.request.Request(f"{url}/v1/models", headers=headers)
+                    with urllib.request.urlopen(req, context=ctx, timeout=15) as resp:
+                        data = json.loads(resp.read().decode())
+                        for m in data.get("data", []):
+                            models.append({
+                                "id": m.get("id", ""),
+                                "name": m.get("display_name") or m.get("id", ""),
+                                "context_length": m.get("max_input_tokens", 200000),
+                                "enabled": True,
+                                "rate_limit": {"rpm": 0, "tpm": 0, "concurrent": 0}
+                            })
+
+                elif backend_type == "google":
+                    api_key = api_keys[0] if api_keys else ""
+                    fetch_url = f"{url}/v1beta/models"
+                    if api_key:
+                        fetch_url += f"?key={api_key}"
+                    req = urllib.request.Request(fetch_url)
+                    with urllib.request.urlopen(req, context=ctx, timeout=15) as resp:
+                        data = json.loads(resp.read().decode())
+                        for m in data.get("models", []):
+                            if "generateContent" in m.get("supportedGenerationMethods", []):
+                                models.append({
+                                    "id": m.get("name", "").replace("models/", ""),
+                                    "name": m.get("displayName", "") or m.get("name", ""),
+                                    "context_length": m.get("inputTokenLimit", 32768),
+                                    "enabled": True,
+                                    "rate_limit": {"rpm": 0, "tpm": 0, "concurrent": 0}
+                                })
+
+                elif backend_type == "ollama":
+                    req = urllib.request.Request(f"{url}/api/tags")
+                    with urllib.request.urlopen(req, context=ctx, timeout=15) as resp:
+                        data = json.loads(resp.read().decode())
+                        for m in data.get("models", []):
+                            models.append({
+                                "id": m.get("name", ""),
+                                "name": m.get("name", ""),
+                                "context_length": 4096,
+                                "enabled": True,
+                                "rate_limit": {"rpm": 0, "tpm": 0, "concurrent": 0}
+                            })
+
+                if not models:
+                    QTimer.singleShot(0, lambda: QMessageBox.information(
+                        self, "提示 | Info",
+                        f"未获取到模型列表。\n请检查地址和 API Key 是否正确。\n\nNo models found.\nPlease check URL and API Key."
+                    ))
+                    return
+
+                # Check for missing context lengths
+                missing = [m for m in models if not m.get("context_length") or m["context_length"] == 0]
+                if missing:
+                    missing_names = ", ".join([m["id"] for m in missing[:5]])
+                    default_ctx, ok = QInputDialog.getText(
+                        self, "设置上下文长度 | Set Context Length",
+                        f"以下模型缺少上下文长度，请输入默认值：\n{missing_names}\n\nEnter default context length:",
+                        text="4096"
+                    )
+                    if ok:
+                        default_val = int(default_ctx) if default_ctx.isdigit() else 4096
+                        for m in models:
+                            if not m.get("context_length") or m["context_length"] == 0:
+                                m["context_length"] = default_val
+                    else:
+                        for m in models:
+                            if not m.get("context_length") or m["context_length"] == 0:
+                                m["context_length"] = 4096
+
+                # Show model selection dialog
+                QTimer.singleShot(0, lambda: self._show_model_selection(models))
+
+            except Exception as e:
+                QTimer.singleShot(0, lambda: QMessageBox.critical(
+                    self, "错误 | Error",
+                    f"获取模型失败 | Failed to fetch models:\n{str(e)}"
+                ))
+            finally:
+                QTimer.singleShot(0, lambda: self._reset_fetch_button())
+
+        threading.Thread(target=do_fetch, daemon=True).start()
+
+    def _reset_fetch_button(self):
+        self.fetch_models_btn.setEnabled(True)
+        self.fetch_models_btn.setText("📡 获取模型 | Fetch Models")
+
+    def _show_model_selection(self, models):
+        """Show dialog to select which models to add"""
+        dialog = QDialog(self)
+        dialog.setWindowTitle("选择模型 | Select Models")
+        dialog.setMinimumSize(500, 400)
+        dialog.setModal(True)
+
+        layout = QVBoxLayout(dialog)
+
+        # Search
+        search_layout = QHBoxLayout()
+        search_input = QLineEdit()
+        search_input.setPlaceholderText("🔍 搜索模型... | Search models...")
+        search_layout.addWidget(search_input)
+
+        select_all_btn = AnimatedButton("全选 | All")
+        select_all_btn.setFixedWidth(80)
+        select_all_btn.clicked.connect(lambda: self._toggle_model_selection(model_list, True))
+        search_layout.addWidget(select_all_btn)
+
+        deselect_all_btn = AnimatedButton("全不选 | None")
+        deselect_all_btn.setFixedWidth(80)
+        deselect_all_btn.clicked.connect(lambda: self._toggle_model_selection(model_list, False))
+        search_layout.addWidget(deselect_all_btn)
+
+        layout.addLayout(search_layout)
+
+        # Model list
+        model_list = QListWidget()
+        model_list.setSelectionMode(QAbstractItemView.NoSelection)
+        layout.addWidget(model_list)
+
+        # Store models and checkboxes
+        model_list._models = models
+        model_list._checkboxes = []
+
+        for m in models:
+            item_widget = QWidget()
+            item_layout = QHBoxLayout(item_widget)
+            item_layout.setContentsMargins(4, 2, 4, 2)
+
+            cb = QCheckBox()
+            cb.setChecked(True)
+            item_layout.addWidget(cb)
+            model_list._checkboxes.append(cb)
+
+            ctx = m.get("context_length", 0)
+            ctx_str = f"{ctx:,}" if ctx else "未知"
+            label = QLabel(f"{m['id']}  ({ctx_str} tokens)")
+            label.setStyleSheet("font-size: 12px;")
+            item_layout.addWidget(label)
+            item_layout.addStretch()
+
+            item = QListWidgetItem(model_list)
+            item.setSizeHint(item_widget.sizeHint())
+            model_list.setItemWidget(item, item_widget)
+
+        # Search filter
+        def filter_models(text):
+            text = text.lower()
+            for i, (m, cb) in enumerate(zip(models, model_list._checkboxes)):
+                item = model_list.item(i)
+                visible = text in m["id"].lower()
+                item.setHidden(not visible)
+
+        search_input.textChanged.connect(filter_models)
+
+        # Buttons
+        btn_layout = QHBoxLayout()
+        count_label = QLabel(f"共 {len(models)} 个模型 | {len(models)} models")
+        count_label.setStyleSheet("color: #94a3b8;")
+        btn_layout.addWidget(count_label)
+        btn_layout.addStretch()
+
+        ok_btn = AnimatedButton("✅ 添加选中 | Add Selected")
+        ok_btn.setObjectName("AccentButton")
+        ok_btn.clicked.connect(lambda: self._add_selected_models(model_list, dialog))
+        btn_layout.addWidget(ok_btn)
+
+        cancel_btn = AnimatedButton("取消 | Cancel")
+        cancel_btn.clicked.connect(dialog.reject)
+        btn_layout.addWidget(cancel_btn)
+
+        layout.addLayout(btn_layout)
+        dialog.exec()
+
+    def _toggle_model_selection(self, model_list, select_all):
+        for cb in model_list._checkboxes:
+            item = model_list.item(model_list._checkboxes.index(cb))
+            if not item.isHidden():
+                cb.setChecked(select_all)
+
+    def _add_selected_models(self, model_list, dialog):
+        """Add selected models to the list"""
+        added = 0
+        for i, cb in enumerate(model_list._checkboxes):
+            if cb.isChecked():
+                m = model_list._models[i]
+                # Check if already exists
+                exists = False
+                for existing in self.models_list._models:
+                    if existing.get("id") == m["id"]:
+                        exists = True
+                        break
+                if not exists:
+                    self.models_list._models.append(m)
+                    ctx = m.get("context_length", 0)
+                    self.models_list.addItem(f"{m['id']} -> {m['name']} ({ctx} tokens)")
+                    added += 1
+
+        self._log(f"已添加 {added} 个模型 | Added {added} models")
+        dialog.accept()
 
     def _edit_model(self):
         row = self.models_list.currentRow()
