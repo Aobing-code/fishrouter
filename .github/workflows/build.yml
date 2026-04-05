@@ -125,7 +125,9 @@ jobs:
           pyinstaller --name FishRouter \
             --onefile \
             --windowed \
+            --debug=all \
             --icon=icon.ico \
+            --add-data "PySide6\plugins;PySide6\\plugins" \
             app/gui.py
 
       - name: Prepare portable package
