@@ -678,13 +678,20 @@ class FishRouterApp(QMainWindow):
         super().__init__()
         self.server_process = None
         self.server_running = False
-        # Read config from project root (parent of app/ directory)
-        self.config_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "config.json")
+        # Determine base directory for config (works for both dev and packaged)
+        if getattr(sys, 'frozen', False):
+            # Packaged executable: config in same directory as exe
+            base_dir = os.path.dirname(sys.executable)
+        else:
+            # Development: project root (parent of app/)
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.config_path = os.path.join(base_dir, "config.json")
         self.config = {}
         self.stats_data = {"total_requests": 0, "total_tokens": 0, "total_errors": 0, "qps": 0}
         self.backend_statuses = []
         self.tray_icon = None
         self.is_minimized_to_tray = False
+        self._refresh_timer = None
 
         self._load_config_file()
         self._setup_window()
