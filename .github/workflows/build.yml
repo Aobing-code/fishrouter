@@ -102,11 +102,7 @@ jobs:
         shell: bash
         run: |
           cd frontend
-          if [ ! -f package-lock.json ]; then
-            npm install
-          else
-            npm ci
-          fi
+          npm install --no-audit --no-fund
           npm run build
           cd ..
 
