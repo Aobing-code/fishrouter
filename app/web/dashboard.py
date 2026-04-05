@@ -141,6 +141,10 @@ async def dashboard(request: Request):
                 return FileResponse(login_file)
     
     static_dir = get_static_dir()
+    # 优先使用 React 构建的 dist/index.html
+    dist_index = static_dir / "dist" / "index.html"
+    if dist_index.exists():
+        return FileResponse(dist_index)
     index_file = static_dir / "index.html"
     if index_file.exists():
         return FileResponse(index_file)
@@ -151,3 +155,99 @@ async def dashboard(request: Request):
 async def dashboard_alt(request: Request):
     """监控面板（备用路径）"""
     return await dashboard(request)
+
+
+@router.get("/api/config")
+async def get_config_api():
+    """获取完整配置（脱敏）"""
+    app = get_app()
+    
+    def backend_to_dict(b):
+        return {
+            "name": b.name,
+            "type": b.type,
+            "url": b.url,
+            "model": b.model,
+            "enabled": b.enabled,
+        }
+    
+    return {
+        "server": {
+            "host": app.config.server.host,
+            "port": app.config.server.port,
+            "log_level": app.config.server.log_level,
+        },
+        "auth": {
+            "enabled": app.config.auth.enabled,
+            "api_keys": ["***"],  # 脱敏
+        },
+        "backends": [backend_to_dict(b) for b in app.config.backends],
+        "routes": [
+            {
+                "name": r.name,
+                "models": r.models,
+                "strategy": r.strategy,
+                "failover": r.failover,
+            } for r in app.config.routes
+        ],
+    }
+
+
+@router.put("/api/config")
+async def update_config_api(request: Request):
+    """更新配置（部分更新支持）"""
+    app = get_app()
+    data = await request.json()
+    
+    # 更新服务器配置
+    if "server" in data:
+        s = data["server"]
+        if "host" in s:
+            app.config.server.host = s["host"]
+        if "port" in s:
+            app.config.server.port = int(s["port"])
+        if "log_level" in s:
+            app.config.server.log_level = s["log_level"]
+    
+    # 更新认证配置
+    if "auth" in data:
+        a = data["auth"]
+        if "enabled" in a:
+            app.config.auth.enabled = a["enabled"]
+    
+    # 更新后端列表（完全替换）
+    if "backends" in data:
+        from app.config import BackendConfig
+        new_backends = []
+        for b_data in data["backends"]:
+            new_backends.append(BackendConfig(**b_data))
+        app.config.backends = new_backends
+    
+    # 更新路由配置
+    if "routes" in data:
+        from app.config import RouteConfig
+        new_routes = []
+        for r_data in data["routes"]:
+            new_routes.append(RouteConfig(**r_data))
+        app.config.routes = new_routes
+    
+    app.save_config()
+    # 重新初始化后端
+    await init_backends()
+    return {"status": "ok", "message": "配置已保存并重新加载"}
+
+
+@router.get("/api/logs")
+async def get_logs_api(lines: int = 100):
+    """获取最近日志"""
+    try:
+        log_file = Path("logs/fishrouter.log")
+        if log_file.exists():
+            with open(log_file, "r", encoding="utf-8") as f:
+                all_lines = f.readlines()
+                last_lines = all_lines[-lines:] if len(all_lines) > lines else all_lines
+                return {"logs": [line.rstrip('\n') for line in last_lines]}
+        else:
+            return {"logs": ["日志文件尚未创建"]}
+    except Exception as e:
+        return {"logs": [f"读取日志失败: {e}"]}
