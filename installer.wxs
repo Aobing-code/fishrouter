@@ -4,43 +4,42 @@
     <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
     <MajorUpgrade DowngradeErrorMessage="A newer version of FishRouter is already installed." />
     <MediaTemplate EmbedCab="yes" />
+
     <Feature Id="ProductFeature" Title="FishRouter" Level="1">
       <ComponentGroupRef Id="ProductComponents" />
       <ComponentRef Id="ApplicationShortcut" />
     </Feature>
+
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramFiles64Folder">
         <Directory Id="INSTALLFOLDER" Name="FishRouter">
-          <ComponentGroup Id="ProductComponents">
-            <Component Id="MainExe" Guid="*">
-              <File Id="FishRouterExe" Source="FishRouter.exe" KeyPath="yes">
-                <Shortcut Id="StartMenuShortcut" Name="FishRouter" Directory="ProgramMenuFolder" WorkingDirectory="INSTALLFOLDER" />
-              </File>
-            </Component>
-            <Component Id="ServerExe" Guid="*">
-              <File Id="ServerExeFile" Source="fishrouter-server.exe" />
-            </Component>
-            <Component Id="ConfigJson" Guid="*">
-              <File Id="ConfigJsonFile" Source="config.json" />
-            </Component>
-            <Component Id="ReadmeMd" Guid="*">
-              <File Id="ReadmeMdFile" Source="README.md" />
-            </Component>
-          </ComponentGroup>
-          <Directory Id="StaticDir" Name="static">
-            <Component Id="StaticComponents" Guid="*">
-              <CreateFolder />
-            </Component>
-          </Directory>
+          <Directory Id="StaticDir" Name="static" />
         </Directory>
       </Directory>
-      <Directory Id="ProgramMenuFolder">
-        <Component Id="ApplicationShortcut" Guid="*">
-          <Shortcut Id="ApplicationStartMenuShortcut" Name="FishRouter" Target="[INSTALLFOLDER]FishRouter.exe" WorkingDirectory="INSTALLFOLDER" />
-          <RemoveFolder Id="ProgramMenuFolder" On="uninstall" />
-          <RegistryValue Root="HKCU" Key="Software\FishRouter" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-        </Component>
-      </Directory>
+      <Directory Id="ProgramMenuFolder" />
     </Directory>
+
+    <ComponentGroup Id="ProductComponents" Directory="INSTALLFOLDER">
+      <Component Id="MainExe" Guid="*">
+        <File Id="FishRouterExe" Source="FishRouter.exe" KeyPath="yes">
+          <Shortcut Id="StartMenuShortcut" Name="FishRouter" Directory="ProgramMenuFolder" WorkingDirectory="INSTALLFOLDER" />
+        </File>
+      </Component>
+      <Component Id="ServerExe" Guid="*">
+        <File Id="ServerExeFile" Source="fishrouter-server.exe" />
+      </Component>
+      <Component Id="ConfigJson" Guid="*">
+        <File Id="ConfigJsonFile" Source="config.json" />
+      </Component>
+      <Component Id="ReadmeMd" Guid="*">
+        <File Id="ReadmeMdFile" Source="README.md" />
+      </Component>
+    </ComponentGroup>
+
+    <Component Id="ApplicationShortcut" Directory="ProgramMenuFolder">
+      <Shortcut Id="ApplicationStartMenuShortcut" Name="FishRouter" Target="[INSTALLFOLDER]FishRouter.exe" WorkingDirectory="INSTALLFOLDER" />
+      <RemoveFolder Id="ProgramMenuFolder" On="uninstall" />
+      <RegistryValue Root="HKCU" Key="Software\FishRouter" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
   </Product>
 </Wix>
