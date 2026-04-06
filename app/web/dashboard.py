@@ -151,10 +151,62 @@ async def dashboard(request: Request):
     return HTMLResponse("<h1>OpenFish</h1><p>Dashboard not found</p>")
 
 
+@router.get("/assets/{filename:path}")
+async def serve_assets(filename: str):
+    """服务 React 构建的 JS/CSS 资源"""
+    static_dir = get_static_dir()
+    file_path = static_dir / "dist" / "assets" / filename
+    if file_path.exists() and file_path.is_file():
+        return FileResponse(file_path)
+    raise HTTPException(status_code=404, detail="Asset not found")
+
+
+@router.get("/favicon.ico")
+async def serve_favicon_ico():
+    """服务 favicon.ico"""
+    static_dir = get_static_dir()
+    favicon = static_dir / "favicon.ico"
+    if favicon.exists():
+        return FileResponse(favicon, media_type="image/x-icon")
+    raise HTTPException(status_code=404, detail="Favicon not found")
+
+
+@router.get("/favicon.svg")
+async def serve_favicon_svg():
+    """服务 favicon.svg"""
+    static_dir = get_static_dir()
+    for ext in [".svg", ".ico"]:
+        favicon = static_dir / f"favicon{ext}"
+        if favicon.exists():
+            return FileResponse(favicon)
+    raise HTTPException(status_code=404, detail="Favicon not found")
+
+
 @router.get("/dashboard", response_class=HTMLResponse)
 async def dashboard_alt(request: Request):
     """监控面板（备用路径）"""
     return await dashboard(request)
+
+
+@router.get("/{full_path:path}", response_class=HTMLResponse)
+async def catch_all(request: Request, full_path: str):
+    """Catch-all 路由，支持 React 客户端路由"""
+    path = request.url.path
+    
+    # 不拦截 API 路径
+    if path.startswith("/api/") or path.startswith("/v1/"):
+        raise HTTPException(status_code=404, detail="Not found")
+    
+    # 不拦截 assets 路径
+    if path.startswith("/assets/"):
+        raise HTTPException(status_code=404, detail="Not found")
+    
+    # 返回 React 入口
+    static_dir = get_static_dir()
+    dist_index = static_dir / "dist" / "index.html"
+    if dist_index.exists():
+        return FileResponse(dist_index)
+    raise HTTPException(status_code=404, detail="Not found")
 
 
 @router.get("/api/config")
