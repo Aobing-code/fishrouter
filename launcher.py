@@ -107,7 +107,7 @@ class FishRouterLauncher:
             logger("Window closed, stopping server...")
             self.stop_server()
 
-        self.window.closed += on_closed
+        self.window.events.closed += on_closed
 
         # 启动 WebView 事件循环
         try:
