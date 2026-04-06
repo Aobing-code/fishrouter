@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Download, Power, RotateCcw, Info, RefreshCw } from 'lucide-react';
+import { FileText, Download, Power, RotateCcw, Info, RefreshCw, LogOut } from 'lucide-react';
 
 const Settings: React.FC = () => {
   const [logs, setLogs] = useState<string[]>([]);
@@ -32,6 +32,14 @@ const Settings: React.FC = () => {
       } catch (e) {
         alert('重启请求已发送');
       }
+    }
+  };
+
+  const shutdownServer = async () => {
+    if (confirm('确定退出客户端？服务器将关闭。')) {
+      try {
+        await fetch('/api/shutdown', { method: 'POST' });
+      } catch (e) {}
     }
   };
 
@@ -67,7 +75,7 @@ const Settings: React.FC = () => {
           className="glass-card p-6"
         >
           <h3 className="text-lg font-semibold text-text-primary mb-4">系统操作</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <button onClick={downloadConfig} className="btn-secondary flex items-center justify-center gap-2">
               <Download size={18} /> 下载配置
             </button>
@@ -76,6 +84,9 @@ const Settings: React.FC = () => {
             </button>
             <button onClick={fetchLogs} className="btn-secondary flex items-center justify-center gap-2">
               <RefreshCw size={18} /> 刷新日志
+            </button>
+            <button onClick={shutdownServer} className="btn-secondary flex items-center justify-center gap-2 text-error border-error/30 hover:bg-error/10">
+              <LogOut size={18} /> 退出客户端
             </button>
           </div>
         </motion.div>

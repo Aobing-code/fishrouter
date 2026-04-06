@@ -1,6 +1,7 @@
 """FishRouter - 轻量级AI模型路由平台"""
 import asyncio
 import logging
+import os
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path

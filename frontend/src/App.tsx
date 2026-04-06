@@ -10,25 +10,44 @@ import Settings from './pages/Settings';
 
 const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user has valid session
-    const token = localStorage.getItem('fishrouter_session');
-    if (token) {
-      // TODO: verify token with API
-      setIsAuthenticated(true);
-    }
+    checkSession();
   }, []);
 
-  const handleLogin = (token: string) => {
-    localStorage.setItem('fishrouter_session', token);
+  const checkSession = async () => {
+    try {
+      const res = await fetch('/api/session/check', { credentials: 'include' });
+      const data = await res.json();
+      if (data.authenticated) {
+        setIsAuthenticated(true);
+      }
+    } catch (e) {
+      console.error('Session check failed:', e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogin = (_token: string) => {
     setIsAuthenticated(true);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('fishrouter_session');
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+    } catch (e) {}
     setIsAuthenticated(false);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-bg-primary">
+        <div className="text-accent-primary text-lg">加载中...</div>
+      </div>
+    );
+  }
 
   return (
     <BrowserRouter>

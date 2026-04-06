@@ -156,3 +156,17 @@ async def restart_server():
         os.kill(os.getpid(), signal.SIGHUP)
     
     return {"status": "restarting", "message": "Server is restarting"}
+
+
+@router.post("/api/shutdown")
+async def shutdown_server():
+    """关闭服务器（用于Windows客户端退出）"""
+    import os
+    import sys
+    
+    if sys.platform == 'win32':
+        os.system('taskkill /F /T /PID %d' % os.getpid())
+    else:
+        os._exit(0)
+    
+    return {"status": "stopping", "message": "Server is stopping"}
