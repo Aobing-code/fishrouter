@@ -111,7 +111,7 @@ class FishRouterLauncher:
 
         # 启动 WebView 事件循环
         try:
-            webview.start(debug=False)
+            webview.start(debug=False, func=None, gui=None)
         except KeyboardInterrupt:
             logger("Interrupted, shutting down...")
         finally:

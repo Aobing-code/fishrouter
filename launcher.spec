@@ -13,6 +13,9 @@ urllib3_submodules = collect_submodules('urllib3')
 chardet_submodules = collect_submodules('chardet')
 certifi_submodules = collect_submodules('certifi')
 idna_submodules = collect_submodules('idna')
+pywebview_submodules = collect_submodules('webview')
+pythonnet_submodules = collect_submodules('pythonnet')
+clr_loader_submodules = collect_submodules('clr_loader')
 
 # Collect all data files
 requests_datas = collect_data_files('requests')
@@ -20,102 +23,23 @@ urllib3_datas = collect_data_files('urllib3')
 chardet_datas = collect_data_files('chardet')
 certifi_datas = collect_data_files('certifi')
 idna_datas = collect_data_files('idna')
+pywebview_datas = collect_data_files('webview')
 
 hiddenimports = [
     'webview',
     'webview.platforms.winforms',
     'webview.platforms.cefbrowser',
-    'json',
-    'threading',
-    'subprocess',
-    'time',
-    'glob',
-    'logging',
-    'collections',
-    'functools',
-    'base64',
-    'hashlib',
-    'hmac',
-    'secrets',
-    'queue',
-    'socket',
-    'ssl',
-    'datetime',
-    'email',
-    'http',
-    'xml',
-    'html',
-    'urllib.parse',
-    'urllib.request',
-    'urllib.error',
-    'urllib.response',
-    'http.client',
-    'http.cookies',
-    'email.utils',
-    'dateutil',
-    'dateutil.parser',
-    'dateutil.tz',
-    'pkg_resources',
-    'pkg_resources.extern',
-    'importlib',
-    'importlib.resources',
-    'importlib_metadata',
-    'zipp',
-    'distutils',
-    'distutils.version',
-    'setuptools',
-    'setuptools._vendor',
-    'setuptools._vendor.jaraco',
-    'setuptools._vendor.jaraco.text',
-    'setuptools._vendor.jaraco.functools',
-    'setuptools._vendor.jaraco.context',
-    'setuptools.extern',
-    'autocommand',
-    'inflection',
-    'markdown_it',
-    'rich',
-    'rich.console',
-    'rich.theme',
-    'rich.style',
-    'rich.color',
-    'rich.text',
-    'rich.table',
-    'rich.progress',
-    'rich.logging',
-    'rich._loop',
-    'rich._windows',
-    'rich._livesync',
-    'rich._file',
-    'rich._timing',
-    'rich._stack',
-    'rich._pick',
-    'rich._ratio',
-    'rich._spinner',
-    'rich._timer',
-    'rich._wrap',
-    'rich._emoji_codes',
-    'rich._emoji',
-    'rich.markdown',
-    'rich.jupyter',
-    'pygments',
-    'pygments.lexer',
-    'pygments.token',
-    'pygments.formatters',
-    'pygments.styles',
-    'markupsafe',
-    'jinja2',
-    'jinja2.runtime',
-    'jinja2.defaults',
-    'jinja2.filters',
-    'jinja2.utils',
-    'jinja2.loaders',
-    'markupsafe._speedups',
-] + requests_submodules + urllib3_submodules + chardet_submodules + certifi_submodules + idna_submodules
+    'webview.platforms.mshtml',
+    'pythonnet',
+    'clr_loader',
+    'clr_loader.clr',
+    'proxy_tools',
+] + requests_submodules + urllib3_submodules + chardet_submodules + certifi_submodules + idna_submodules + pywebview_submodules + pythonnet_submodules + clr_loader_submodules
 
 datas = [
     ('config.example.json', '.'),
     ('static', 'static'),
-] + requests_datas + urllib3_datas + chardet_datas + certifi_datas + idna_datas
+] + requests_datas + urllib3_datas + chardet_datas + certifi_datas + idna_datas + pywebview_datas
 
 a = Analysis(
     ['launcher.py'],
