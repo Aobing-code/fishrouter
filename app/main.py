@@ -226,10 +226,20 @@ async def api_root():
 def main():
     """主入口"""
     # 从环境变量或命令行获取配置文件路径
+    # Windows GUI 模式：从 exe 所在目录读取 config.json
     config_path = "config.json"
+    
+    # 如果传入了明确路径，则使用
     if len(sys.argv) > 1:
         config_path = sys.argv[1]
-
+    else:
+        # Windows 打包模式：优先从 exe 同级目录读取
+        if getattr(sys, 'frozen', False):
+            base_dir = os.path.dirname(sys.executable)
+            local_config = os.path.join(base_dir, "config.json")
+            if os.path.exists(local_config):
+                config_path = local_config
+    
     global config
     config = Config(config_path)
 
