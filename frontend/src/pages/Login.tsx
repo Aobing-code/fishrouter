@@ -27,15 +27,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       const res = await fetch('/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ password }),
       });
 
       const data = await res.json();
 
       if (res.ok) {
-        // Extract session cookie or token from response
-        const token = data.token || 'dummy';
-        onLogin(token);
+        onLogin('session');
         navigate('/');
       } else {
         setError(data.detail || '密码错误，请重试');

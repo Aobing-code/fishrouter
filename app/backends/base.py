@@ -100,3 +100,7 @@ class BaseBackend(ABC):
         """记录请求"""
         self.status.total_requests += 1
         self.status.total_tokens += tokens
+
+    async def close(self) -> None:
+        """关闭连接（子类可重写）"""
+        pass

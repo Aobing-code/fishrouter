@@ -231,9 +231,9 @@ async def update_config_api(request: Request):
             new_routes.append(RouteConfig(**r_data))
         app.config.routes = new_routes
     
-    app.save_config()
+    app.config.save()
     # 重新初始化后端
-    await init_backends()
+    await app.init_backends()
     return {"status": "ok", "message": "配置已保存并重新加载"}
 
 

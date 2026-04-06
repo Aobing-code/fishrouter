@@ -19,8 +19,9 @@ interface BackendStatus {
   type: string;
   healthy: boolean;
   latency: number;
-  requests: number;
-  model: string;
+  total_requests: number;
+  total_tokens: number;
+  models: string[];
 }
 
 const StatCard: React.FC<{
@@ -59,7 +60,7 @@ const StatCard: React.FC<{
 const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
   const location = useLocation();
   const [backends, setBackends] = useState<BackendStatus[]>([]);
-  const [timelineData, setTimelineData] = useState<{ time: string; requests: number }[]>([]);
+  const [timelineData, setTimelineData] = useState<{ time: string; requests: number; tokens: number; errors: number }[]>([]);
   const [stats, setStats] = useState({
     totalRequests: 0,
     qps: 0,
@@ -70,26 +71,32 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
 
   const fetchData = async () => {
     try {
-      const res = await fetch('/api/backends');
-      const data = await res.json();
-      setBackends(data);
+      const [statusRes, timelineRes] = await Promise.all([
+        fetch('/api/monitor/status'),
+        fetch('/api/monitor/timeline?minutes=30'),
+      ]);
+
+      const statusData = await statusRes.json();
+      const timelineRaw = await timelineRes.json();
+
+      setBackends(statusData.backends || []);
+      setStats({
+        totalRequests: statusData.stats?.total_requests || 0,
+        qps: statusData.stats?.qps || 0,
+        totalTokens: statusData.stats?.total_tokens || 0,
+        totalErrors: statusData.stats?.total_errors || 0,
+      });
+
+      const formatted = (timelineRaw || []).map((item: any) => ({
+        time: new Date(item.time).toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+        requests: item.requests || 0,
+        tokens: item.tokens || 0,
+        errors: item.errors || 0,
+      }));
+      setTimelineData(formatted);
     } catch (e) {
-      console.error('Failed to fetch backends:', e);
+      console.error('Failed to fetch dashboard data:', e);
     }
-    // Mock stats for demo
-    setStats({
-      totalRequests: Math.floor(Math.random() * 10000) + 5000,
-      qps: Math.floor(Math.random() * 200) + 50,
-      totalTokens: Math.floor(Math.random() * 1e6) + 100000,
-      totalErrors: Math.floor(Math.random() * 50) + 5,
-    });
-    // Generate timeline data
-    const now = new Date();
-    const data = Array.from({ length: 20 }, (_, i) => ({
-      time: now.toLocaleTimeString('zh-CN', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
-      requests: Math.floor(Math.random() * 100) + 20,
-    }));
-    setTimelineData(data);
     setLoading(false);
   };
 
@@ -103,6 +110,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     { path: '/', label: '监控', icon: <Activity size={20} /> },
     { path: '/backends', label: '后端', icon: <Server size={20} /> },
     { path: '/config', label: '配置', icon: <Settings size={20} /> },
+    { path: '/settings', label: '设置', icon: <LayoutDashboard size={20} /> },
   ];
 
   return (
@@ -161,7 +169,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
           />
           <StatCard
             title="QPS"
-            value={stats.qps}
+            value={stats.qps.toFixed(1)}
             icon={<Zap className="text-success" />}
             color="from-success to-green-400"
             delay={0.1}
@@ -175,7 +183,7 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
           />
           <StatCard
             title="错误数"
-            value={stats.totalErrors}
+            value={stats.totalErrors.toLocaleString()}
             icon={<AlertTriangle className="text-error" />}
             color="from-error to-red-400"
             delay={0.3}
@@ -237,34 +245,19 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
             transition={{ delay: 0.5 }}
             className="glass-card p-6"
           >
-            <h3 className="text-lg font-semibold text-text-primary mb-4">系统状态</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-text-muted">服务器运行时间</span>
-                <span className="font-mono text-accent-primary">12d 04h 23m</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-text-muted">内存使用</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-24 h-2 bg-bg-tertiary rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-accent-primary to-accent-secondary w-[67%] rounded-full" />
-                  </div>
-                  <span className="font-mono text-accent-primary text-sm">67%</span>
+            <h3 className="text-lg font-semibold text-text-primary mb-4">路由策略</h3>
+            <div className="space-y-3">
+              {backends.slice(0, 5).map((b) => (
+                <div key={b.name} className="flex items-center justify-between">
+                  <span className="text-text-muted text-sm">{b.name}</span>
+                  <span className={`status-badge ${b.healthy ? 'status-healthy' : 'status-unhealthy'}`}>
+                    {b.healthy ? '正常' : '异常'}
+                  </span>
                 </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-text-muted">CPU 使用</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-24 h-2 bg-bg-tertiary rounded-full overflow-hidden">
-                    <div className="h-full bg-gradient-to-r from-success to-green-400 w-[34%] rounded-full" />
-                  </div>
-                  <span className="font-mono text-success text-sm">34%</span>
-                </div>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-text-muted">磁盘剩余</span>
-                <span className="font-mono text-warning">12.4 GB</span>
-              </div>
+              ))}
+              {backends.length === 0 && (
+                <div className="text-text-muted text-sm text-center py-4">暂无后端</div>
+              )}
             </div>
           </motion.div>
         </div>
@@ -297,6 +290,13 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
+                {backends.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan={6} className="px-6 py-8 text-center text-text-muted">
+                      暂无后端数据
+                    </td>
+                  </tr>
+                )}
                 {backends.map((backend, idx) => (
                   <motion.tr
                     key={backend.name}
@@ -329,8 +329,10 @@ const Dashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
                         <span className="font-mono text-sm text-text-secondary">{backend.latency}ms</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 font-mono text-text-secondary">{backend.requests.toLocaleString()}</td>
-                    <td className="px-6 py-4 text-text-muted text-sm">{backend.model}</td>
+                    <td className="px-6 py-4 font-mono text-text-secondary">{backend.total_requests.toLocaleString()}</td>
+                    <td className="px-6 py-4 text-text-muted text-sm">
+                      {Array.isArray(backend.models) ? backend.models.join(', ') : backend.models}
+                    </td>
                   </motion.tr>
                 ))}
               </tbody>

@@ -40,5 +40,8 @@ Thumbs.db
 *.tar.gz
 *.whl
 
+# Node.js
+node_modules/
+
 # Config (contains secrets)
 config.json
