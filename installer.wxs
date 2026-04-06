@@ -5,6 +5,10 @@
     <MajorUpgrade DowngradeErrorMessage="A newer version of FishRouter is already installed." />
     <MediaTemplate EmbedCab="yes" />
 
+    <WixVariable Id="WixUILicenseRtf" Value="LICENSE" />
+
+    <UIRef Id="WixUI_Minimal" />
+
     <Feature Id="ProductFeature" Title="FishRouter" Level="1">
       <ComponentGroupRef Id="ProductComponents" />
       <ComponentRef Id="ApplicationShortcut" />

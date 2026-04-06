@@ -151,7 +151,7 @@ jobs:
         shell: cmd
         run: |
           "C:\Program Files (x86)\WiX Toolset v3.14\bin\candle.exe" -dVersion=${{ steps.version.outputs.version }} installer.wxs
-          "C:\Program Files (x86)\WiX Toolset v3.14\bin\light.exe" installer.wixobj -out FishRouter-Setup.msi
+          "C:\Program Files (x86)\WiX Toolset v3.14\bin\light.exe" -ext WixUIExtension installer.wixobj -out FishRouter-Setup.msi
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
