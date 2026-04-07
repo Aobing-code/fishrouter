@@ -234,11 +234,14 @@ async def chat_completions(request: Request):
                 if tried and last_error:
                     if "choices" in result and result["choices"]:
                         choice = result["choices"][0]
-                        if "message" in choice and "content" in choice["message"]:
-                            original = choice["message"]["content"] or ""
-                            choice["message"]["content"] = inject_fallback_info(
-                                original, provider_name, model_id or "", last_error
-                            )
+                        if "message" in choice:
+                            msg = choice["message"]
+                            # 工具调用不注入回退信息
+                            if not msg.get("tool_calls") and msg.get("content") is not None:
+                                original = msg["content"]
+                                msg["content"] = inject_fallback_info(
+                                    original, provider_name, model_id or "", last_error
+                                )
                 
                 return result
                 
