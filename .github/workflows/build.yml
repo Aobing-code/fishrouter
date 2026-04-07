@@ -108,12 +108,6 @@ jobs:
           npm run build
           cd ..
 
-      - name: Sync frontend to static
-        shell: bash
-        run: |
-          mkdir -p static
-          cp -rf frontend/dist/* static/
-
       - name: Build launcher (WebView2)
         shell: bash
         run: |
