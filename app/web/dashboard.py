@@ -1,5 +1,6 @@
 """Web监控面板 - 仅服务 React 构建产物"""
 import secrets
+import sys
 import time
 from pathlib import Path
 from typing import Dict
@@ -21,11 +22,22 @@ SESSION_EXPIRE = 86400  # 24小时
 
 def get_static_dir() -> Path:
     """获取静态文件目录"""
-    possible_paths = [
-        Path("/app/static"),
+    possible_paths = []
+    
+    # 从当前工作目录
+    possible_paths.append(Path.cwd() / "static")
+    
+    # Windows 打包后从 exe 所在目录
+    if getattr(sys, 'frozen', False):
+        base_dir = Path(sys.executable).parent
+        possible_paths.append(base_dir / "static")
+    
+    # 开发环境路径
+    possible_paths.extend([
         Path(__file__).parent.parent.parent / "static",
-        Path.cwd() / "static",
-    ]
+        Path("/app/static"),
+    ])
+    
     for p in possible_paths:
         if p.exists():
             return p
@@ -34,7 +46,10 @@ def get_static_dir() -> Path:
 
 def get_dist_index() -> Path:
     """获取 React 构建产物入口"""
-    return get_static_dir() / "dist" / "index.html"
+    static_dir = get_static_dir()
+    dist_index = static_dir / "dist" / "index.html"
+    print(f"[DEBUG] get_dist_index: static_dir={static_dir}, dist_index={dist_index}, exists={dist_index.exists()}")
+    return dist_index
 
 
 def get_app():
