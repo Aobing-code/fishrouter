@@ -139,16 +139,6 @@ async def dashboard_alt(request: Request):
     return _serve_react_app()
 
 
-@router.get("/{full_path:path}", response_class=HTMLResponse)
-async def catch_all(request: Request, full_path: str):
-    path = request.url.path
-    if path.startswith("/api/") or path.startswith("/v1/"):
-        raise HTTPException(status_code=404, detail="Not found")
-    if path.startswith("/assets/"):
-        raise HTTPException(status_code=404, detail="Not found")
-    return _serve_react_app()
-
-
 @router.get("/api/logs")
 async def get_logs_api(lines: int = 100):
     try:
@@ -172,3 +162,11 @@ async def shutdown_server():
     else:
         os._exit(0)
     return {"status": "stopping", "message": "Server is stopping"}
+
+
+spa_router = APIRouter()
+
+
+@spa_router.get("/{full_path:path}", response_class=HTMLResponse)
+async def catch_all(request: Request, full_path: str):
+    return _serve_react_app()

@@ -15,7 +15,7 @@ from app.config import Config
 from app.backends import create_backend, BaseBackend
 from app.core import LoadBalancer, HealthChecker, APIKeyAuth, stats, rate_limiter
 from app.api import chat_router, embeddings_router, models_router, monitor_router, config_router
-from app.web import dashboard_router
+from app.web import dashboard_router, spa_router
 
 # 配置日志
 logging.basicConfig(
@@ -163,6 +163,7 @@ app.include_router(embeddings_router, dependencies=[Depends(verify_api_key)])
 app.include_router(models_router, dependencies=[Depends(verify_api_key)])
 app.include_router(monitor_router)
 app.include_router(config_router)
+app.include_router(spa_router)
 
 
 # 健康检查端点
