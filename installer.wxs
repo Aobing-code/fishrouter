@@ -12,7 +12,6 @@
     <Feature Id="ProductFeature" Title="FishRouter" Level="1">
       <ComponentGroupRef Id="ProductComponents" />
       <ComponentGroupRef Id="StaticFiles" />
-      <ComponentGroupRef Id="AssetsFiles" />
       <ComponentRef Id="ApplicationShortcut" />
     </Feature>
 
@@ -39,15 +38,12 @@
     </ComponentGroup>
 
     <ComponentGroup Id="StaticFiles" Directory="INSTALLFOLDER">
-      <Component Id="StaticIndex" Guid="*" Win64="yes">
+      <Component Id="DistIndexHtml" Guid="*" Win64="yes">
         <File Id="IndexHtml" Source="static\dist\index.html" />
       </Component>
       <Component Id="FaviconIco" Guid="*" Win64="yes">
         <File Id="FaviconFile" Source="static\favicon.ico" />
       </Component>
-    </ComponentGroup>
-
-    <ComponentGroup Id="AssetsFiles" Directory="INSTALLFOLDER">
       <Component Id="AssetsJs" Guid="*" Win64="yes">
         <File Id="AssetsJsFile" Source="static\dist\assets\index-CAjUMjF7.js" />
       </Component>
