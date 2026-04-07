@@ -17,7 +17,11 @@
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramFiles64Folder">
         <Directory Id="INSTALLFOLDER" Name="FishRouter">
-          <Directory Id="StaticDir" Name="static" />
+          <Directory Id="static" Name="static">
+            <Directory Id="staticdist" Name="dist">
+              <Directory Id="staticassets" Name="assets" />
+            </Directory>
+          </Directory>
         </Directory>
       </Directory>
       <Directory Id="ProgramMenuFolder" />
@@ -35,6 +39,28 @@
       </Component>
       <Component Id="ReadmeMd" Guid="*" Win64="yes">
         <File Id="ReadmeMdFile" Source="README.md" />
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="StaticFiles" Directory="static">
+      <Component Id="StaticIndex" Guid="*" Win64="yes">
+        <File Id="IndexHtml" Source="static\index.html" />
+        <File Id="FaviconIco" Source="static\favicon.ico" />
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="DistFiles" Directory="staticdist">
+      <Component Id="DistIndex" Guid="*" Win64="yes">
+        <File Id="DistIndexHtml" Source="static\dist\index.html" />
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="AssetsFiles" Directory="staticassets">
+      <Component Id="AssetsJs" Guid="*" Win64="yes">
+        <File Id="AssetsJsFile" Source="static\dist\assets\index-CAjUMjF7.js" />
+      </Component>
+      <Component Id="AssetsCss" Guid="*" Win64="yes">
+        <File Id="AssetsCssFile" Source="static\dist\assets\index-DfKb1GcC.css" />
       </Component>
     </ComponentGroup>
 

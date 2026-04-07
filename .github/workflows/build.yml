@@ -142,6 +142,7 @@ jobs:
           if [ -d "frontend/dist" ]; then
             cp -rf frontend/dist/* static/
           fi
+          cp -rf static/* .  # Copy all static files to root for installer
 
       - name: Install WiX Toolset
         run: |
