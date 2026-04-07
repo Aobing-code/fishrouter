@@ -47,9 +47,7 @@ def get_static_dir() -> Path:
 def get_dist_index() -> Path:
     """获取 React 构建产物入口"""
     static_dir = get_static_dir()
-    dist_index = static_dir / "dist" / "index.html"
-    print(f"[DEBUG] get_dist_index: static_dir={static_dir}, dist_index={dist_index}, exists={dist_index.exists()}")
-    return dist_index
+    return static_dir / "dist" / "index.html"
 
 
 def get_app():
