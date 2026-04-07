@@ -10,9 +10,7 @@
 
 **Lightweight Edge AI Bus · Unified AI Model Routing Platform**
 
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://hub.docker.com)
 [![Python](https://img.shields.io/badge/Python-3.11+-green)](https://python.org)
-[![Go Report](https://goreportcard.com/badge/github.com/Aobing-code/fishrouter?style=flat-square)](https://goreportcard.com/report/github.com/Aobing-code/fishrouter)
 [![Stars](https://img.shields.io/github/stars/Aobing-code/fishrouter?style=flat-square)](https://github.com/Aobing-code/fishrouter/stargazers)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
@@ -38,25 +36,8 @@
 | **Tool Calling** | Unified Function Calling in OpenAI format |
 | **零依赖部署** | 纯内存运行，无数据库，Docker 一键启动 |
 | **Zero Dependencies** | In-memory, no database, Docker one-click deploy |
-| **实时监控** | Linux: Web 面板 | Windows: 本地 GUI 应用 |
-| **Real-time Monitor** | Linux: Web dashboard | Windows: Native GUI app |
-
----
-
-### 为什么选择 FishRouter?
-
-| 对比项 | 自建代理 | 其他网关 | FishRouter |
-|--------|----------|----------|------------|
-| **部署复杂度** | 需要自己集成各 SDK，易出错 | 通常较重，需额外依赖 | 零依赖，Docker 一键启动 |
-| **故障转移** | 需自行实现 | 多为固定策略 | 智能预判、自动降级、多级回退 |
-| **限速控制** | 简单全局限速 | 有限或不支持 | 模型级 RPM/TPM/并发 |
-| **多模态支持** | 不一致 | 部分支持 | 所有后端统一支持 Vision |
-| **监控** | 需自行接入 | 通常paid功能 | 内置 Web GUI + Prometheus 指标 |
-| **UI 管理** | 无 | 部分有 | Linux Web + Windows 原生 GUI |
-
----
-
-## 快速开始 | Quick Start
+| **实时监控** | React 现代化 Web 面板，支持全平台 |
+| **Real-time Monitor** | Modern React Web dashboard, cross-platform |
 
 ---
 
@@ -68,46 +49,22 @@
 curl -sSL https://raw.githubusercontent.com/Aobing-code/fishrouter/main/install.sh | sudo bash
 ```
 
-**安装流程 | Installation Flow:**
-
-```
-1. 检查 root 权限 | Check root privileges
-   ↓
-2. 检测系统架构 | Detect architecture (x86_64 / aarch64)
-   ↓
-3. 安装依赖 (curl/wget/jq) | Install dependencies
-   - 自动识别 apt / yum / pacman
-   ↓
-4. 下载二进制文件 | Download binary from GitHub Releases
-   - 解压到 /opt/fishrouter/
-   - 如下载失败，自动从源码编译
-   ↓
-5. 创建 systemd 服务 | Create systemd service
-   - 开机自启 | Auto-start on boot
-   - 崩溃自动重启 | Auto-restart on crash
-   ↓
-6. 生成配置文件 | Generate config.json
-   ↓
-7. 启动服务 | Start service
-   - 输出访问地址和管理命令
-```
-
-**安装后管理 | Post-Install Management:**
+安装后管理 | Post-Install Management:
 
 ```bash
-# 查看状态 | Check status
+# 查看状态
 sudo systemctl status fishrouter
 
-# 查看日志 | View logs
+# 查看日志
 sudo journalctl -u fishrouter -f
 
-# 重启服务 | Restart
+# 重启服务
 sudo systemctl restart fishrouter
 
-# 编辑配置 | Edit config
+# 编辑配置
 sudo nano /opt/fishrouter/config.json
 
-# 卸载 | Uninstall
+# 卸载
 sudo systemctl stop fishrouter
 sudo systemctl disable fishrouter
 sudo rm -rf /opt/fishrouter /etc/systemd/system/fishrouter.service
@@ -129,13 +86,19 @@ pip install -r requirements.txt
 python -m app.main
 ```
 
-### 配置验证 | Config Validation
+### Windows 部署 | Windows Deploy
 
-运行 `python scripts/configtest.py` 检查 `config.json` 语法和后端连通性。
+**方式一：安装包安装 | Option 1: Installer**
+1. 下载 `FishRouter-Setup.msi` 从 [Releases](https://github.com/Aobing-code/fishrouter/releases)
+2. 双击安装，自动创建桌面快捷方式和开始菜单
+3. 打开 FishRouter，通过 Web 面板管理所有配置
 
-访问 `http://localhost:8080` 查看监控面板。
+**方式二：便携版 | Option 2: Portable**
+1. 下载 `FishRouter-Windows-Portable.zip`
+2. 解压到任意目录
+3. 双击 `FishRouter.exe` 直接运行
 
-Visit `http://localhost:8080` for the dashboard.
+> Windows 客户端启动后会自动打开内置浏览器窗口，访问 `http://localhost:8080`
 
 ---
 
@@ -143,23 +106,22 @@ Visit `http://localhost:8080` for the dashboard.
 
 ### 1. 统一API入口 | Unified API
 
-所有后端使用相同的 OpenAI 格式：  
-All backends use the same OpenAI format:
+所有后端使用相同的 OpenAI 格式：
 
 ```bash
-# 调用 OpenAI | Call OpenAI
+# 调用 OpenAI
 curl -X POST http://localhost:8080/v1/chat/completions \
   -d '{"model": "gpt-4", "messages": [...]}'
 
-# 调用 Claude | Call Claude
+# 调用 Claude
 curl -X POST http://localhost:8080/v1/chat/completions \
   -d '{"model": "claude-sonnet", "messages": [...]}'
 
-# 调用 Gemini | Call Gemini
+# 调用 Gemini
 curl -X POST http://localhost:8080/v1/chat/completions \
   -d '{"model": "gemini-pro", "messages": [...]}'
 
-# 调用本地 Ollama | Call local Ollama
+# 调用本地 Ollama
 curl -X POST http://localhost:8080/v1/chat/completions \
   -d '{"model": "llama3", "messages": [...]}'
 ```
@@ -168,10 +130,9 @@ curl -X POST http://localhost:8080/v1/chat/completions \
 
 ```bash
 # 直接指定模型（失败后自动回退）
-# Direct model (auto fallback on failure)
 curl -d '{"model": "gpt-4", ...}'
 
-# 使用指定路由策略 | Use specific route
+# 使用指定路由策略
 curl -d '{"model": "back-default", ...}'
 curl -d '{"model": "back-cheap", ...}'
 curl -d '{"model": "back-fast", ...}'
@@ -187,7 +148,7 @@ curl -d '{"model": "back-fast", ...}'
     "type": "function",
     "function": {
       "name": "get_weather",
-      "description": "获取天气 | Get weather",
+      "description": "获取天气",
       "parameters": {
         "type": "object",
         "properties": {
@@ -208,12 +169,43 @@ curl -d '{"model": "back-fast", ...}'
   "messages": [{
     "role": "user",
     "content": [
-      {"type": "text", "text": "这是什么？| What's this?"},
+      {"type": "text", "text": "这是什么？"},
       {"type": "image_url", "image_url": {"url": "data:image/jpeg;base64,..."}}
     ]
   }]
 }
 ```
+
+---
+
+## 路由策略 | Routing Strategy
+
+| 策略 | 说明 | Description |
+|------|------|-------------|
+| `latency` | 选择延迟最低的后端（默认） | Select lowest latency (default) |
+| `round_robin` | 轮询分发 | Round-robin distribution |
+| `random` | 随机选择 | Random selection |
+| `weighted` | 按权重分发 | Weighted distribution |
+| `priority` | 按优先级选择 | Priority-based selection |
+| `custom` | 自定义回退顺序 | Custom fallback order |
+
+## 故障转移 | Failover
+
+| 条件 | 说明 | Description |
+|------|------|-------------|
+| `rate_limit` | 触发速率限制时自动转移 | Auto transfer on rate limit |
+| `error` | 错误次数超过阈值时转移 | Transfer on error threshold |
+| `latency` | 延迟超过阈值时转移 | Transfer on latency threshold |
+| `timeout` | 请求超时时转移 | Transfer on timeout |
+
+## 支持的后端 | Supported Backends
+
+| Backend 后端 | Type 类型 | Tool Calling | Multimodal |
+|--------------|-----------|-------------|------------|
+| OpenAI / Azure / Compatible | `openai` | ✅ | ✅ |
+| Anthropic Claude | `anthropic` | ✅ | ✅ |
+| Google Gemini | `google` | ✅ | ✅ |
+| Ollama | `ollama` | ✅ | ✅ |
 
 ---
 
@@ -302,145 +294,6 @@ curl -d '{"model": "back-fast", ...}'
 
 ---
 
-## 路由策略 | Routing Strategy
-
-| 策略 | 说明 | Description |
-|------|------|-------------|
-| `latency` | 选择延迟最低的后端（默认） | Select lowest latency (default) |
-| `round_robin` | 轮询分发 | Round-robin distribution |
-| `random` | 随机选择 | Random selection |
-| `weighted` | 按权重分发 | Weighted distribution |
-| `priority` | 按优先级选择 | Priority-based selection |
-| `custom` | 自定义回退顺序 | Custom fallback order |
-
----
-
-## 故障转移 | Failover
-
-| 条件 | 说明 | Description |
-|------|------|-------------|
-| `rate_limit` | 触发速率限制时自动转移 | Auto transfer on rate limit |
-| `error` | 错误次数超过阈值时转移 | Transfer on error threshold |
-| `latency` | 延迟超过阈值时转移 | Transfer on latency threshold |
-| `timeout` | 请求超时时转移 | Transfer on timeout |
-
----
-
-## 支持的后端 | Supported Backends
-
-| Backend 后端 | Type 类型 | Tool Calling 工具调用 | Multimodal 多模态 |
-|--------------|-----------|----------------------|-------------------|
-| OpenAI / Azure / Compatible | `openai` | ✅ | ✅ |
-| Anthropic Claude | `anthropic` | ✅ | ✅ |
-| Google Gemini | `google` | ✅ | ✅ |
-| Ollama | `ollama` | ✅ | ✅ |
-
----
-
-## Docker 部署 | Docker Deploy
-
-```bash
-# 构建镜像 | Build image
-docker build -t fishrouter .
-
-# 运行容器 | Run container
-docker run -d \
-  --name fishrouter \
-  -p 8080:8080 \
-  -v $(pwd)/config.json:/app/config.json \
-  fishrouter
-
-# 或使用 docker-compose | Or use docker-compose
-docker-compose up -d
-```
-
----
-
-### Windows 部署 | Windows Deploy
-
-**方式一：安装包安装 | Option 1: Installer**
-1. 下载 `FishRouter-Setup.exe` 从 [Releases](https://github.com/Aobing-code/fishrouter/releases)
-2. 双击安装，自动创建桌面快捷方式和开始菜单
-3. 打开 FishRouter，通过 GUI 管理所有配置
-
-**方式二：便携版 | Option 2: Portable**
-1. 下载 `FishRouter-Windows-Portable.zip`
-2. 解压到任意目录
-3. 双击 `FishRouter.exe` 直接运行
-
-**Windows GUI 功能 | Windows GUI Features:**
-- 🏠 控制台 — 启动/停止服务器，查看实时日志
-- 🔗 后端管理 — 添加/编辑/删除后端，支持多 Key 配置
-- 🛤️ 路由配置 — 策略选择、回退顺序拖拽设置
-- ⚙️ 系统设置 — 端口、认证、开机自启、配置文件编辑
-- 🔄 自动更新 — 一键检查并下载最新版本
-
-### macOS 部署 | macOS Deploy
-
-```bash
-# 下载并解压
-curl -sSL -o fishrouter.tar.gz https://github.com/Aobing-code/fishrouter/releases/latest/download/fishrouter-server-macos-arm64.tar.gz
-tar -xzf fishrouter.tar.gz
-
-# 运行
-./fishrouter-server --port 8080
-```
-
----
-
-## 下载 | Downloads
-
-| 平台 Platform | 文件 File | 说明 Description |
-|---------------|-----------|------------------|
-| 🪟 Windows | `FishRouter-Setup.exe` | 安装包（推荐）Installer |
-| 🪟 Windows | `FishRouter-Windows-Portable.zip` | 便携版，开箱即用 Portable |
-| 🐧 Linux | `install.sh` 一键脚本 | 自动下载 + systemd 服务 One-click |
-| 🐧 Linux | `fishrouter-server-linux-amd64.tar.gz` | 服务端二进制 Server binary |
-| 🍎 macOS ARM64 | `fishrouter-server-macos-arm64.tar.gz` | Apple Silicon |
-
-> **💡 管理方式 | Management:**
-> - **Linux/macOS**: Web UI → `http://localhost:8080`
-> - **Windows**: 本地 GUI 应用（无需浏览器）Native GUI app (no browser needed)
-
----
-
-## 配置说明 | Configuration
-
-```
-fishrouter/
-├── app/
-│   ├── main.py           # 主入口 | Main entry
-│   ├── config.py         # 配置管理 | Config management
-│   ├── api/
-│   │   ├── chat.py       # Chat Completions
-│   │   ├── embeddings.py # Embeddings
-│   │   ├── models.py     # Models
-│   │   ├── monitor.py    # 监控API | Monitor API
-│   │   └── config.py     # 配置API | Config API
-│   ├── backends/
-│   │   ├── base.py       # 后端基类 | Backend base
-│   │   ├── openai.py     # OpenAI 兼容
-│   │   ├── anthropic.py  # Anthropic Claude
-│   │   ├── google.py     # Google Gemini
-│   │   └── ollama.py     # Ollama
-│   ├── core/
-│   │   ├── balancer.py   # 负载均衡 | Load balancer
-│   │   ├── ratelimit.py  # 速率限制 | Rate limiter
-│   │   ├── auth.py       # API Key 认证
-│   │   └── stats.py      # 统计追踪 | Statistics
-│   └── web/
-│       └── dashboard.py  # 监控面板 | Dashboard
-├── static/
-│   ├── index.html        # 前端界面 | Frontend
-│   └── login.html        # 登录页面 | Login
-├── config.example.json   # 示例配置 | Example config
-├── Dockerfile
-├── docker-compose.yml
-└── requirements.txt
-```
-
----
-
 ## 项目结构 | Project Structure
 
 ```
@@ -466,15 +319,41 @@ fishrouter/
 │   │   ├── auth.py       # API Key 认证
 │   │   └── stats.py      # 统计追踪 | Statistics
 │   └── web/
-│       └── dashboard.py  # 监控面板 | Dashboard
-├── static/
-│   ├── index.html        # 前端界面 | Frontend
-│   └── login.html        # 登录页面 | Login
+│       └── dashboard.py  # 静态文件服务 | Static file serving
+├── frontend/             # React 前端 | React frontend
+│   ├── src/
+│   │   ├── App.tsx       # 路由入口 | Router entry
+│   │   └── pages/        # 页面组件 | Page components
+│   ├── vite.config.ts    # Vite 配置
+│   └── package.json
+├── static/               # 构建产物 | Build output
+│   └── dist/
+│       ├── index.html
+│       └── assets/
 ├── config.example.json   # 示例配置 | Example config
 ├── Dockerfile
 ├── docker-compose.yml
+├── launcher.py           # Windows 客户端 | Windows client
+├── launcher.spec         # PyInstaller 配置
+├── server.spec           # PyInstaller 配置
 └── requirements.txt
 ```
+
+---
+
+## 下载 | Downloads
+
+| 平台 Platform | 文件 File | 说明 Description |
+|---------------|-----------|------------------|
+| 🪟 Windows | `FishRouter-Setup.msi` | 安装包 Installer |
+| 🪟 Windows | `FishRouter-Windows-Portable.zip` | 便携版 Portable |
+| 🐧 Linux | `install.sh` 一键脚本 | 自动下载 + systemd 服务 |
+| 🐧 Linux | `fishrouter-server-linux-amd64.tar.gz` | 服务端二进制 |
+| 🍎 macOS ARM64 | `fishrouter-server-macos-arm64.tar.gz` | Apple Silicon |
+
+> **管理方式 | Management:**
+> - **全平台**: Web UI → `http://localhost:8080`
+> - **Windows**: 客户端自动打开内置浏览器窗口
 
 ---
 
