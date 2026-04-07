@@ -37,21 +37,6 @@
       </Component>
     </ComponentGroup>
 
-    <ComponentGroup Id="StaticFiles" Directory="INSTALLFOLDER">
-      <Component Id="DistIndexHtml" Guid="*" Win64="yes">
-        <File Id="IndexHtml" Source="static\dist\index.html" />
-      </Component>
-      <Component Id="FaviconIco" Guid="*" Win64="yes">
-        <File Id="FaviconFile" Source="static\favicon.ico" />
-      </Component>
-      <Component Id="AssetsJs" Guid="*" Win64="yes">
-        <File Id="AssetsJsFile" Source="static\dist\assets\index-CAjUMjF7.js" />
-      </Component>
-      <Component Id="AssetsCss" Guid="*" Win64="yes">
-        <File Id="AssetsCssFile" Source="static\dist\assets\index-DfKb1GcC.css" />
-      </Component>
-    </ComponentGroup>
-
     <Component Id="ApplicationShortcut" Guid="*" Directory="ProgramMenuFolder">
       <Shortcut Id="ApplicationStartMenuShortcut" Name="FishRouter" Target="[INSTALLFOLDER]FishRouter.exe" WorkingDirectory="INSTALLFOLDER" />
       <RemoveFolder Id="ProgramMenuFolder" On="uninstall" />
