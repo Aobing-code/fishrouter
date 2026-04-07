@@ -226,11 +226,8 @@ async def api_root():
 
 def main():
     """主入口"""
-    # 从环境变量或命令行获取配置文件路径
-    # Windows GUI 模式：从 exe 所在目录读取 config.json
     config_path = "config.json"
     
-    # 如果传入了明确路径，则使用
     if len(sys.argv) > 1:
         config_path = sys.argv[1]
     else:
@@ -240,9 +237,23 @@ def main():
             local_config = os.path.join(base_dir, "config.json")
             if os.path.exists(local_config):
                 config_path = local_config
+                logger.info(f"Using config from exe directory: {config_path}")
+            else:
+                # 如果 exe 目录没有，尝试当前工作目录
+                cwd_config = os.path.join(os.getcwd(), "config.json")
+                if os.path.exists(cwd_config):
+                    config_path = cwd_config
+                    logger.info(f"Using config from cwd: {config_path}")
+        else:
+            # 开发模式：当前工作目录
+            cwd_config = os.path.join(os.getcwd(), "config.json")
+            if os.path.exists(cwd_config):
+                config_path = cwd_config
     
     global config
     config = Config(config_path)
+    logger.info(f"Config path: {config_path}, absolute: {os.path.abspath(config_path)}")
+    logger.info(f"Config exists: {os.path.exists(config_path)}")
 
     # 设置日志级别
     log_level = config.server.log_level.lower()
