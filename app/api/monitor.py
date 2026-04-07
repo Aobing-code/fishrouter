@@ -25,7 +25,7 @@ async def get_status():
             "type": backend.__class__.__name__.replace("Backend", "").lower(),
             "url": backend.url,
             "healthy": backend.status.healthy,
-            "latency": backend.status.latency,
+            "latency": int(backend.status.latency * 1000) if backend.status.latency else 0,
             "last_check": backend.status.last_check,
             "error_count": backend.status.error_count,
             "total_requests": backend.status.total_requests,
