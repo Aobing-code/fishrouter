@@ -108,6 +108,11 @@ jobs:
           npm run build
           cd ..
 
+      - name: Sync frontend to static
+        run: |
+          mkdir -p static
+          cp -rf frontend/dist/* static/
+
       - name: Build launcher (WebView2)
         shell: bash
         run: |
@@ -140,10 +145,12 @@ jobs:
           Copy-Item dist/fishrouter-server.exe .
           Copy-Item config.example.json config.json
           
-          # Copy all static files to root (WiX will look for files here)
+          # Flatten static folder to root
           if (Test-Path "static") {
             Get-ChildItem "static" -Recurse -File | ForEach-Object {
-              $relativePath = $_.FullName.Replace("static\", "")
+              $relativePath = $_.FullName.Replace("$PWD\static\", "")
+              $dir = Split-Path $relativePath -Parent
+              if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force }
               Copy-Item $_.FullName -Destination $relativePath -Force
             }
           }
