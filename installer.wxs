@@ -44,8 +44,17 @@
 
     <ComponentGroup Id="StaticFiles" Directory="INSTALLFOLDER">
       <Component Id="StaticIndex" Guid="*" Win64="yes">
-        <File Id="IndexHtml" Source="dist\index.html" />
-        <File Id="FaviconIco" Source="favicon.ico" />
+        <File Id="IndexHtml" Source="static\dist\index.html" />
+        <File Id="FaviconIco" Source="static\favicon.ico" />
+      </Component>
+    </ComponentGroup>
+
+    <ComponentGroup Id="AssetsFiles" Directory="INSTALLFOLDER">
+      <Component Id="AssetsJs" Guid="*" Win64="yes">
+        <File Id="AssetsJsFile" Source="static\dist\assets\index-CAjUMjF7.js" />
+      </Component>
+      <Component Id="AssetsCss" Guid="*" Win64="yes">
+        <File Id="AssetsCssFile" Source="static\dist\assets\index-DfKb1GcC.css" />
       </Component>
     </ComponentGroup>
 
