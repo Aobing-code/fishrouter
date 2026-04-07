@@ -149,7 +149,7 @@ jobs:
       - name: Build MSI Installer
         shell: cmd
         run: |
-          "C:\Program Files (x86)\WiX Toolset v3.14\bin\heat.exe" dir static -out static-files.wxs -gg -sfrag -sreg -srd -dr INSTALLFOLDER -cg StaticFiles -var var.StaticSourceDir
+          "C:\Program Files (x86)\WiX Toolset v3.14\bin\heat.exe" dir static -out static-files.wxs -gg -sfrag -sreg -srd -dr INSTALLFOLDER -cg StaticFiles -var var.StaticSourceDir -64
           "C:\Program Files (x86)\WiX Toolset v3.14\bin\candle.exe" -dVersion=${{ steps.version.outputs.version }} -dStaticSourceDir=static installer.wxs static-files.wxs
           "C:\Program Files (x86)\WiX Toolset v3.14\bin\light.exe" -ext WixUIExtension installer.wixobj static-files.wixobj -out FishRouter-Setup.msi
 
