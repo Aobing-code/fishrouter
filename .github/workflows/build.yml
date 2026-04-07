@@ -111,7 +111,8 @@ jobs:
       - name: Build launcher (WebView2)
         shell: bash
         run: |
-          pyinstaller launcher.spec
+          pip install pywebview requests
+          pyinstaller launcher.spec --clean
 
       - name: Prepare portable package
         shell: pwsh
