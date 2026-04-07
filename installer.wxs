@@ -11,18 +11,14 @@
 
     <Feature Id="ProductFeature" Title="FishRouter" Level="1">
       <ComponentGroupRef Id="ProductComponents" />
+      <ComponentGroupRef Id="StaticFiles" />
+      <ComponentGroupRef Id="AssetsFiles" />
       <ComponentRef Id="ApplicationShortcut" />
     </Feature>
 
     <Directory Id="TARGETDIR" Name="SourceDir">
       <Directory Id="ProgramFiles64Folder">
-        <Directory Id="INSTALLFOLDER" Name="FishRouter">
-          <Directory Id="static" Name="static">
-            <Directory Id="staticdist" Name="dist">
-              <Directory Id="staticassets" Name="assets" />
-            </Directory>
-          </Directory>
-        </Directory>
+        <Directory Id="INSTALLFOLDER" Name="FishRouter" />
       </Directory>
       <Directory Id="ProgramMenuFolder" />
     </Directory>
@@ -45,7 +41,9 @@
     <ComponentGroup Id="StaticFiles" Directory="INSTALLFOLDER">
       <Component Id="StaticIndex" Guid="*" Win64="yes">
         <File Id="IndexHtml" Source="static\dist\index.html" />
-        <File Id="FaviconIco" Source="static\favicon.ico" />
+      </Component>
+      <Component Id="FaviconIco" Guid="*" Win64="yes">
+        <File Id="FaviconFile" Source="static\favicon.ico" />
       </Component>
     </ComponentGroup>
 
@@ -55,21 +53,6 @@
       </Component>
       <Component Id="AssetsCss" Guid="*" Win64="yes">
         <File Id="AssetsCssFile" Source="static\dist\assets\index-DfKb1GcC.css" />
-      </Component>
-    </ComponentGroup>
-
-    <ComponentGroup Id="DistFiles" Directory="INSTALLFOLDER">
-      <Component Id="DistIndex" Guid="*" Win64="yes">
-        <File Id="DistIndexHtml" Source="dist\index.html" />
-      </Component>
-    </ComponentGroup>
-
-    <ComponentGroup Id="AssetsFiles" Directory="INSTALLFOLDER">
-      <Component Id="AssetsJs" Guid="*" Win64="yes">
-        <File Id="AssetsJsFile" Source="assets\index-CAjUMjF7.js" />
-      </Component>
-      <Component Id="AssetsCss" Guid="*" Win64="yes">
-        <File Id="AssetsCssFile" Source="assets\index-DfKb1GcC.css" />
       </Component>
     </ComponentGroup>
 
