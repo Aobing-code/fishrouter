@@ -133,16 +133,22 @@ jobs:
           echo "version=0.$COMMIT_COUNT.0" >> $GITHUB_OUTPUT
 
       - name: Copy files for installer
-        shell: bash
+        shell: pwsh
         run: |
-          cp -f dist/FishRouter.exe .
-          cp -f dist/fishrouter-server.exe .
-          cp -f config.example.json config.json
-          mkdir -p static
-          if [ -d "frontend/dist" ]; then
-            cp -rf frontend/dist/* static/
-          fi
-          cp -rf static/* .  # Copy all static files to root for installer
+          Copy-Item dist/FishRouter.exe .
+          Copy-Item dist/fishrouter-server.exe .
+          Copy-Item config.example.json config.json
+          
+          # Build static folder
+          if (-not (Test-Path "static")) { New-Item -ItemType Directory -Path "static" -Force }
+          if (Test-Path "frontend/dist") {
+            Copy-Item -Path "frontend/dist/*" -Destination "static/" -Recurse -Force
+          }
+          
+          # Flatten static for WiX: copy static/dist to root
+          if (Test-Path "static/dist") {
+            Copy-Item -Path "static/dist/*" -Destination "." -Recurse -Force
+          }
 
       - name: Install WiX Toolset
         run: |
