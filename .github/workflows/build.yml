@@ -135,19 +135,17 @@ jobs:
       - name: Copy files for installer
         shell: pwsh
         run: |
+          # Copy exe files
           Copy-Item dist/FishRouter.exe .
           Copy-Item dist/fishrouter-server.exe .
           Copy-Item config.example.json config.json
           
-          # Build static folder
-          if (-not (Test-Path "static")) { New-Item -ItemType Directory -Path "static" -Force }
-          if (Test-Path "frontend/dist") {
-            Copy-Item -Path "frontend/dist/*" -Destination "static/" -Recurse -Force
-          }
-          
-          # Flatten static for WiX: copy static/dist to root
-          if (Test-Path "static/dist") {
-            Copy-Item -Path "static/dist/*" -Destination "." -Recurse -Force
+          # Copy all static files to root (WiX will look for files here)
+          if (Test-Path "static") {
+            Get-ChildItem "static" -Recurse -File | ForEach-Object {
+              $relativePath = $_.FullName.Replace("static\", "")
+              Copy-Item $_.FullName -Destination $relativePath -Force
+            }
           }
 
       - name: Install WiX Toolset

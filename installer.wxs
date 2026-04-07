@@ -42,25 +42,25 @@
       </Component>
     </ComponentGroup>
 
-    <ComponentGroup Id="StaticFiles" Directory="static">
+    <ComponentGroup Id="StaticFiles" Directory="INSTALLFOLDER">
       <Component Id="StaticIndex" Guid="*" Win64="yes">
-        <File Id="IndexHtml" Source="static\index.html" />
-        <File Id="FaviconIco" Source="static\favicon.ico" />
+        <File Id="IndexHtml" Source="dist\index.html" />
+        <File Id="FaviconIco" Source="favicon.ico" />
       </Component>
     </ComponentGroup>
 
-    <ComponentGroup Id="DistFiles" Directory="staticdist">
+    <ComponentGroup Id="DistFiles" Directory="INSTALLFOLDER">
       <Component Id="DistIndex" Guid="*" Win64="yes">
-        <File Id="DistIndexHtml" Source="static\dist\index.html" />
+        <File Id="DistIndexHtml" Source="dist\index.html" />
       </Component>
     </ComponentGroup>
 
-    <ComponentGroup Id="AssetsFiles" Directory="staticassets">
+    <ComponentGroup Id="AssetsFiles" Directory="INSTALLFOLDER">
       <Component Id="AssetsJs" Guid="*" Win64="yes">
-        <File Id="AssetsJsFile" Source="static\dist\assets\index-CAjUMjF7.js" />
+        <File Id="AssetsJsFile" Source="assets\index-CAjUMjF7.js" />
       </Component>
       <Component Id="AssetsCss" Guid="*" Win64="yes">
-        <File Id="AssetsCssFile" Source="static\dist\assets\index-DfKb1GcC.css" />
+        <File Id="AssetsCssFile" Source="assets\index-DfKb1GcC.css" />
       </Component>
     </ComponentGroup>
 
